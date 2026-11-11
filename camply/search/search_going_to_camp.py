@@ -14,7 +14,9 @@ from camply.containers import (
     SearchWindow,
 )
 from camply.providers import GoingToCamp
-from camply.providers.going_to_camp.going_to_camp_provider import NON_GROUP_EQUIPMENT
+from camply.providers.going_to_camp.going_to_camp_provider import (
+    DEFAULT_BOOKING_CATEGORY,
+)
 from camply.search.base_search import BaseCampingSearch
 from camply.utils import make_list
 from camply.utils.general_utils import is_list_like
@@ -49,6 +51,7 @@ class SearchGoingToCamp(BaseCampingSearch):
         campgrounds: Optional[Union[List[str], str]] = None,
         equipment_id: Optional[int] = None,
         nights: int = 1,
+        booking_category_id: Optional[int] = None,
         **kwargs,
     ) -> None:
         """
@@ -69,6 +72,9 @@ class SearchGoingToCamp(BaseCampingSearch):
             Campground ID or List of Campground IDs
         nights: int
             minimum number of consecutive nights to search per campsite,defaults to 1
+        booking_category_id: Optional[int]
+            Reservation service to search (Campsite, Backcountry, Roofed, Group, ...).
+            Defaults to 0, "Campsite". List them with `camply booking-categories`.
         """
         self.provider = GoingToCamp
         super().__init__(
@@ -92,6 +98,11 @@ class SearchGoingToCamp(BaseCampingSearch):
             is True
         )
         self.campsites = make_list(campsites)
+        self.booking_category_id = int(
+            DEFAULT_BOOKING_CATEGORY
+            if booking_category_id in (None, "")
+            else booking_category_id
+        )
         self.equipment_id = self._validate_equipment(
             equipment_id, self._recreation_area_id
         )
@@ -146,6 +157,7 @@ class SearchGoingToCamp(BaseCampingSearch):
                     start_date=current_start_date,
                     end_date=search_window.end_date,
                     equipment_type_id=self.equipment_id,
+                    booking_category_id=self.booking_category_id,
                 )
                 for site in sites:
                     site_details = self.campsite_finder.get_site_details(
@@ -166,11 +178,14 @@ class SearchGoingToCamp(BaseCampingSearch):
                         rec_area_domain_name,
                         resource_location_id=campground.facility_id,
                         map_id=site.map_id,
-                        equipment_id=NON_GROUP_EQUIPMENT,
+                        equipment_id=self.campsite_finder.get_equipment_category_id(
+                            self._recreation_area_id, self.booking_category_id
+                        ),
                         sub_equipment_id=self.equipment_id,
                         party_size=1,
                         start_date=current_start_date,
                         end_date=search_window.end_date,
+                        booking_category_id=self.booking_category_id,
                     )
 
                     # Some rec areas have zero-capacity sites, which should not
@@ -240,11 +255,14 @@ class SearchGoingToCamp(BaseCampingSearch):
         """
         if self._campgrounds not in [(), [], None]:
             return self.campsite_finder.find_campgrounds(
-                rec_area_id=self._recreation_area_id, campground_id=self._campgrounds
+                rec_area_id=self._recreation_area_id,
+                campground_id=self._campgrounds,
+                booking_category_id=self.booking_category_id,
             )
 
         return self.campsite_finder.find_campgrounds(
             rec_area_id=self._recreation_area_id,
+            booking_category_id=self.booking_category_id,
         )
 
     def list_campsite_units(self) -> Any:

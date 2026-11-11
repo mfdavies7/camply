@@ -203,6 +203,44 @@ campground_argument = click.option(
     multiple=True,
     help="Add individual Campgrounds by ID.",
 )
+booking_category_argument = click.option(
+    "--booking-category",
+    default=None,
+    type=int,
+    help="Reservation service to search, e.g. Campsite (frontcountry), Backcountry, "
+    "Roofed Accommodation or Group. Defaults to 0 (Campsite). IDs differ per "
+    "recreation area: use `camply booking-categories --rec-area <rec area id>` "
+    "to list them.",
+)
+
+
+@camply_command_line.command(cls=RichCommand)
+@rec_area_argument
+@provider_argument
+@click.pass_obj
+def booking_categories(
+    context: CamplyContext,
+    rec_area: Optional[int] = None,
+    provider: str = DEFAULT_CAMPLY_PROVIDER,
+) -> None:
+    """
+    List the reservation services of a recreation area
+
+    Reservation services (booking categories) are things like frontcountry
+    campsites, backcountry sites, roofed accommodations and group sites. Pass the
+    ID to `--booking-category` when listing campgrounds or searching campsites.
+    """
+    provider = _preferred_provider(context, provider)
+    if provider != GoingToCamp.__name__:
+        logger.warning("That Provider doesn't support booking categories")
+        sys.exit(0)
+    if not rec_area:
+        logger.error(
+            "This provider requires --rec-area to be specified when listing booking categories"
+        )
+        sys.exit(1)
+    GoingToCamp().list_booking_categories(rec_area[0], log=True)
+    sys.exit(0)
 
 
 @camply_command_line.command(cls=RichCommand)
@@ -288,6 +326,7 @@ def recreation_areas(
 @rec_area_argument
 @campground_argument
 @campsite_id_argument
+@booking_category_argument
 @provider_argument
 @debug_option
 @click.pass_obj
@@ -299,6 +338,7 @@ def campgrounds(
     rec_area: Optional[int] = None,
     campground: Optional[int] = None,
     campsite: Optional[int] = None,
+    booking_category: Optional[int] = None,
     provider: Optional[str] = DEFAULT_CAMPLY_PROVIDER,
 ) -> None:
     """
@@ -333,6 +373,8 @@ def campgrounds(
     params = {}
     if state is not None:
         params.update({"state": state})
+    if booking_category is not None:
+        params.update({"booking_category_id": booking_category})
     camp_finder.find_campgrounds(
         search_string=search,
         rec_area_id=make_list(rec_area, coerce=int),
@@ -598,6 +640,7 @@ def _get_provider_kwargs_from_cli(
     equipment: Tuple[Union[str, int]],
     equipment_id: Tuple[Union[str, int]],
     day: Optional[Tuple[str]],
+    booking_category: Optional[int] = None,
 ) -> Tuple[Dict[str, Any], Dict[str, Any]]:
     """
     Get Provider kwargs from CLI
@@ -644,6 +687,7 @@ def _get_provider_kwargs_from_cli(
         "offline_search_path": offline_search_path,
         "equipment": equipment,
         "equipment_id": equipment_id,
+        "booking_category_id": booking_category,
         "days_of_the_week": days_of_the_week,
     }
     search_kwargs = {
@@ -679,6 +723,7 @@ def _get_provider_kwargs_from_cli(
 @notify_first_try_argument
 @equipment_argument
 @equipment_id_argument
+@booking_category_argument
 @provider_argument
 @debug_option
 @click.pass_obj
@@ -705,6 +750,7 @@ def campsites(
     equipment: Tuple[Union[str, int]],
     equipment_id: Tuple[Union[str, int]],
     day: Optional[Tuple[str]],
+    booking_category: Optional[int],
 ) -> None:
     """
     Find Available Campsites with Custom Search Criteria
@@ -747,6 +793,7 @@ def campsites(
             equipment_id=equipment_id,
             day=day,
             yaml_config=yaml_config,
+            booking_category=booking_category,
         )
     provider_class: Type[BaseCampingSearch] = CAMPSITE_SEARCH_PROVIDER[provider]
     camping_finder: BaseCampingSearch = provider_class(**provider_kwargs)
@@ -851,6 +898,23 @@ def list_campsites(
     )
     logger.info("Searching for campsites to list")
     camp_search.list_campsite_units()
+
+
+@camply_command_line.command(cls=RichCommand)
+@click.option(
+    "--port", default=8000, show_default=True, help="Port to serve the web UI on."
+)
+@click.option("--no-browser", is_flag=True, help="Don't open a browser window.")
+@debug_option
+@click.pass_obj
+def web(context: CamplyContext, port: int, no_browser: bool, debug: bool) -> None:
+    """
+    Open a simple point-and-click campsite search in your web browser
+    """
+    from camply.web import serve
+
+    _set_up_debug(debug=debug)
+    serve(port=port, open_browser=not no_browser)
 
 
 def cli():

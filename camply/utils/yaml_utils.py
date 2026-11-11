@@ -122,6 +122,7 @@ def yaml_file_to_arguments(
         "weekends_only": yaml_model.weekends,
         "days_of_the_week": days_of_the_week,
         "nights": yaml_model.nights,
+        "booking_category_id": yaml_model.booking_category,
         "equipment": equipment,
         "offline_search": yaml_model.offline_search,
         "offline_search_path": yaml_model.offline_search_path,

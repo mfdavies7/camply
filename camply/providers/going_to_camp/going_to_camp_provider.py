@@ -21,11 +21,8 @@ from camply.utils.logging_utils import log_sorted_response
 
 logger = logging.getLogger(__name__)
 
-NON_GROUP_EQUIPMENT = -32768
-
-CAMP_SITE = -2147483648
-OVERFLOW_SITE = -2147483647
-GROUP_SITE = -2147483643
+# "Campsite" (frontcountry) booking category; the default on every GoingToCamp site
+DEFAULT_BOOKING_CATEGORY = 0
 
 ENDPOINTS = {
     "CAMP_DETAILS": "https://{}/api/maps",
@@ -37,6 +34,7 @@ ENDPOINTS = {
     "MAPDATA": "https://{}/api/availability/map",
     "SITE_DETAILS": "https://{}/api/resourcelocation/resources",
     "ATTRIBUTE_DETAILS": "https://{}/api/attribute/filterable",
+    "LIST_BOOKING_CATEGORIES": "https://{}/api/bookingcategories",
 }
 
 
@@ -106,6 +104,7 @@ class GoingToCamp(BaseProvider):
         rec_area_id: Optional[List[int]] = None,
         campground_id: Optional[List[int]] = None,
         campsite_id: Optional[List[int]] = None,
+        booking_category_id: int = DEFAULT_BOOKING_CATEGORY,
         **kwargs,
     ) -> List[CampgroundFacility]:
         """
@@ -119,6 +118,9 @@ class GoingToCamp(BaseProvider):
             Recreation Area ID by which to filter
         campground_id: Optional[List[int]]
             ID of the Campground
+        booking_category_id: int
+            Reservation service (Campsite, Backcountry, Roofed, ...), see
+            `list_booking_categories`
 
         Returns
         -------
@@ -135,7 +137,75 @@ class GoingToCamp(BaseProvider):
             rec_area_id=rec_area_id,
             campground_id=campground_id,
             search_string=search_string,
+            booking_category_id=booking_category_id,
         )
+
+    def list_booking_categories(
+        self, rec_area_id: int, log: bool = False
+    ) -> List[Dict[str, Any]]:
+        """
+        List the reservation services (booking categories) a recreation area offers
+
+        e.g. Campsite (frontcountry), Backcountry, Roofed Accommodation, Group.
+        IDs and the resource types they cover differ per recreation area.
+
+        Parameters
+        ----------
+        rec_area_id: int
+            The ID of the recreation area
+        log: bool
+            Log the categories
+
+        Returns
+        -------
+        List[Dict[str, Any]]
+            Raw `/api/bookingcategories` entries that are enabled
+        """
+        if not hasattr(self, "_booking_categories"):
+            self._booking_categories = {}
+        rec_area_id = int(rec_area_id)
+        if rec_area_id not in self._booking_categories:
+            self._booking_categories[rec_area_id] = [
+                category
+                for category in self._api_request(
+                    rec_area_id, "LIST_BOOKING_CATEGORIES"
+                )
+                if not category.get("isDisabled")
+            ]
+        categories = self._booking_categories[rec_area_id]
+        if log:
+            for category in sorted(categories, key=lambda c: c["bookingCategoryId"]):
+                logger.info(
+                    f"📌 {category['bookingCategoryId']}: {booking_category_name(category)}"
+                )
+        return categories
+
+    def get_booking_category(
+        self, rec_area_id: int, booking_category_id: int
+    ) -> Dict[str, Any]:
+        """
+        Look up one booking category of a recreation area, exiting if it doesn't exist
+        """
+        for category in self.list_booking_categories(rec_area_id):
+            if str(category["bookingCategoryId"]) == str(booking_category_id):
+                return category
+        logger.error(
+            f"Booking category '{booking_category_id}' does not exist for this "
+            "recreation area. List them with "
+            f"`camply booking-categories --rec-area {rec_area_id}`"
+        )
+        sys.exit(1)
+
+    def get_equipment_category_id(
+        self, rec_area_id: int, booking_category_id: int
+    ) -> Optional[int]:
+        """
+        Equipment category a booking category books with (None for e.g. roofed / day use)
+        """
+        equipment = self.get_booking_category(rec_area_id, booking_category_id)[
+            "allowedEquipmentCategories"
+        ]
+        return equipment[0]["equipmentCategoryId"] if equipment else None
 
     def _get_attr_val(self, attribute, attribute_detail) -> any:
         for attr_value in attribute.get("values", []):
@@ -214,6 +284,7 @@ class GoingToCamp(BaseProvider):
         party_size,
         start_date,
         end_date,
+        booking_category_id=DEFAULT_BOOKING_CATEGORY,
     ):
         """
         Generate a URL which a site can be booked
@@ -226,10 +297,12 @@ class GoingToCamp(BaseProvider):
         """
         if not sub_equipment_id:
             sub_equipment_id = ""
+        if equipment_id is None:
+            equipment_id = ""
 
         return (
             "https://%s/create-booking/results?mapId=%s"
-            "&bookingCategoryId=0"
+            "&bookingCategoryId=%s"
             "&startDate=%s"
             "&endDate=%s"
             "&isReserving=true"
@@ -240,6 +313,7 @@ class GoingToCamp(BaseProvider):
             % (
                 rec_area_domain_name,
                 map_id,
+                booking_category_id,
                 start_date.isoformat(),
                 end_date.isoformat(),
                 equipment_id,
@@ -254,6 +328,7 @@ class GoingToCamp(BaseProvider):
         rec_area_id: Optional[Union[List[int], int]] = None,
         campground_id: Optional[Union[List[int], int]] = None,
         search_string: Optional[str] = None,
+        booking_category_id: int = DEFAULT_BOOKING_CATEGORY,
         **kwargs,
     ) -> List[CampgroundFacility]:
         """
@@ -267,6 +342,8 @@ class GoingToCamp(BaseProvider):
             Campground IDs
         search_string: Optional[str]
             A string to search for in the facility name
+        booking_category_id: int
+            Only return campgrounds offering this reservation service
 
         Returns
         -------
@@ -289,8 +366,13 @@ class GoingToCamp(BaseProvider):
         self.campground_details = {}
         api_response = self._api_request(rec_area_id, "LIST_CAMPGROUNDS")
 
+        allowed_resource_categories = self.get_booking_category(
+            rec_area_id, booking_category_id
+        )["allowedResourceCategoryIds"]
         filtered_facilities = self._filter_facilities_responses(
-            rec_area_id, facilities=api_response
+            rec_area_id,
+            facilities=api_response,
+            allowed_resource_categories=allowed_resource_categories,
         )
 
         campgrounds = []
@@ -364,7 +446,10 @@ class GoingToCamp(BaseProvider):
         return json.loads(response.content)
 
     def _filter_facilities_responses(
-        self, rec_area_id: int, facilities=List[Dict[str, Any]]
+        self,
+        rec_area_id: int,
+        facilities: List[Dict[str, Any]],
+        allowed_resource_categories: List[int],
     ) -> List[ResourceLocation]:
         """
         Filter Facilities to Actual Reservable Campsites
@@ -375,6 +460,8 @@ class GoingToCamp(BaseProvider):
             Recreation Area ID
         facilities: List[Dict[str, Any]]
             List of facilities
+        allowed_resource_categories: List[int]
+            Resource categories of the booking category being searched
 
         Returns
         -------
@@ -415,14 +502,8 @@ class GoingToCamp(BaseProvider):
             if not facility.resource_categories:
                 continue
 
-            # Resource categories from: /api/resourcecategory
-            if any(
-                [
-                    CAMP_SITE in facility.resource_categories,
-                    GROUP_SITE in facility.resource_categories,
-                    OVERFLOW_SITE in facility.resource_categories,
-                ]
-            ):
+            # Resource category IDs differ per site; match the booking category's
+            if set(facility.resource_categories) & set(allowed_resource_categories):
                 filtered_facilities.append(facility)
 
         return filtered_facilities
@@ -510,6 +591,7 @@ class GoingToCamp(BaseProvider):
         start_date: datetime.date,
         end_date: datetime.date,
         equipment_type_id: Optional[str],
+        booking_category_id: int = DEFAULT_BOOKING_CATEGORY,
     ) -> List[AvailableResource]:
         """
         Retrieve the Availability for all Sites in a Camp Area
@@ -525,16 +607,20 @@ class GoingToCamp(BaseProvider):
         search_filter = {
             "mapId": campground.map_id,
             "resourceLocationId": campground.facility_id,
-            "bookingCategoryId": 0,
+            "bookingCategoryId": booking_category_id,
             "startDate": start_date.isoformat(),
             "endDate": end_date.isoformat(),
             "isReserving": True,
             "getDailyAvailability": False,
             "partySize": 1,
             "numEquipment": 1,
-            "equipmentCategoryId": NON_GROUP_EQUIPMENT,
             "filterData": [],
         }
+        equipment_category_id = self.get_equipment_category_id(
+            campground.recreation_area_id, booking_category_id
+        )
+        if equipment_category_id is not None:
+            search_filter["equipmentCategoryId"] = equipment_category_id
         if equipment_type_id:
             search_filter["subEquipmentCategoryId"] = equipment_type_id
 
@@ -558,6 +644,14 @@ class GoingToCamp(BaseProvider):
                     availabilities.append(ar)
 
         return availabilities
+
+
+def booking_category_name(category: Dict[str, Any]) -> str:
+    """
+    Display name of a raw booking category
+    """
+    name = _fetch_nested_key(category, "localizedValues", 0, "name")
+    return (name or f"Booking Category {category['bookingCategoryId']}").strip()
 
 
 def _fetch_nested_key(obj: Union[dict, list, object], *keys: str) -> Any:

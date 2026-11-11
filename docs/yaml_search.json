@@ -130,6 +130,10 @@
       "default": 1,
       "type": "integer"
     },
+    "booking_category": {
+      "title": "Booking Category",
+      "type": "integer"
+    },
     "continuous": {
       "title": "Continuous",
       "default": true,
