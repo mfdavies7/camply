@@ -157,7 +157,7 @@ def camply_command_line(
     visit the camply documentation at https://juftin.com/camply
     """
     set_up_logging(log_level=None if debug is False else logging.INFO)
-    logger.camply("camply, the campsite finder ⛺️")
+    logger.camply("camply, the campsite finder")
     ctx.obj = CamplyContext(debug=debug, provider=provider)
     _set_up_debug(debug=debug)
 
@@ -270,7 +270,7 @@ def equipment_types(
         GoingToCamp().list_equipment_types(rec_area[0])
     else:
         logger.warning(
-            "That Provider doesn't support equipment based searching, yet 🙂"
+            "That Provider doesn't support equipment based searching, yet"
         )
     sys.exit(0)
 
@@ -370,7 +370,7 @@ def campgrounds(
         sys.exit(1)
     search_provider_class = CAMPSITE_SEARCH_PROVIDER[provider]
     camp_finder = search_provider_class.provider_class()
-    params = {}
+    params: Dict[str, Any] = {}
     if state is not None:
         params.update({"state": state})
     if booking_category is not None:
@@ -926,7 +926,7 @@ def cli():
     except KeyboardInterrupt:
         logger.debug("Handling Exit Request")
     finally:
-        logger.camply("Exiting camply 👋")
+        logger.camply("Exiting camply")
 
 
 if __name__ == "__main__":

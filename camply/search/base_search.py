@@ -12,7 +12,18 @@ from itertools import groupby, islice, tee
 from operator import itemgetter
 from os import getenv
 from time import sleep
-from typing import Any, Dict, Generator, Iterable, List, Optional, Sequence, Set, Union
+from typing import (
+    Any,
+    Dict,
+    Generator,
+    Iterable,
+    List,
+    Optional,
+    Sequence,
+    Set,
+    Type,
+    Union,
+)
 
 import pandas as pd
 import tenacity
@@ -28,7 +39,6 @@ from camply.notifications.multi_provider_notifications import MultiNotifierProvi
 from camply.providers import ProviderType
 from camply.utils import make_list
 from camply.utils.general_utils import days_of_the_week_base
-from camply.utils.logging_utils import get_emoji
 
 logger = logging.getLogger(__name__)
 
@@ -150,7 +160,7 @@ class BaseCampingSearch(ABC):
 
     @property
     @abstractmethod
-    def provider_class(self) -> ProviderType:
+    def provider_class(self) -> Type[ProviderType]:
         """
         Provider Class Dependency Injection
         """
@@ -253,7 +263,7 @@ class BaseCampingSearch(ABC):
             ):
                 matching_campgrounds.append(camp)
         logger.info(
-            f"{(get_emoji(matching_campgrounds) + ' ') * 4}{len(matching_campgrounds)} "
+            f"{len(matching_campgrounds)} "
             "Reservable Campsites Matching Search Preferences"
         )
         self.assemble_availabilities(
@@ -423,7 +433,7 @@ class BaseCampingSearch(ABC):
                     "first try. Try searching online instead. "
                     f"camply is only sending the first "
                     f"{minimum_first_notify} notifications. "
-                    "Go Get your campsite! 🏕"
+                    "Go Get your campsite!"
                 )
                 logger.warning(error_message)
                 notifier.send_message(message=error_message)
@@ -873,15 +883,15 @@ class BaseCampingSearch(ABC):
         booking_date: datetime
         for booking_date, available_sites in availability_df.groupby("booking_date"):
             logger.info(
-                f"📅 {booking_date.strftime('%a, %B %d')} "
-                f"🏕  {len(available_sites)} sites"
+                f"{booking_date.strftime('%a, %B %d')}: "
+                f"{len(available_sites)} sites"
             )
             location_tuple: tuple
             for location_tuple, campground_availability in available_sites.groupby(
                 [DataColumns.RECREATION_AREA_COLUMN, DataColumns.FACILITY_NAME_COLUMN]
             ):
                 logger.info(
-                    f"\t⛰️  {'  🏕  '.join(location_tuple)}: ⛺ "
+                    f"\t{' - '.join(location_tuple)}: "
                     f"{len(campground_availability)} sites"
                 )
                 if verbose is True:
@@ -896,7 +906,7 @@ class BaseCampingSearch(ABC):
                         ].unique()
                         for booking_url in sorted(unique_urls):
                             logger.info(
-                                f"\t\t🔗 {booking_url} "
+                                f"\t\t{booking_url} "
                                 f"({booking_nights} night"
                                 f"{'s' if booking_nights > 1 else ''})"
                             )
@@ -1032,7 +1042,7 @@ class BaseCampingSearch(ABC):
         logger.info("Found %s campgrounds to search", len(facilities))
         logger.info("Found %s Campsites", len(campsites))
         for facility in sorted(facilities, key=lambda x: x.facility_id):
-            logger.info("🏕  %s - (#%s)", facility.facility_name, facility.facility_id)
+            logger.info("%s - (#%s)", facility.facility_name, facility.facility_id)
             for item in campsites:
                 if item.facility_id == facility.facility_id:
-                    logger.info("    ⛺️ %s - (#%s)", item.name, item.id)
+                    logger.info("    %s - (#%s)", item.name, item.id)

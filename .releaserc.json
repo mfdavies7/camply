@@ -15,7 +15,8 @@
         }
     ],
     "plugins": [
-        "semantic-release-gitmoji",
+        "@semantic-release/commit-analyzer",
+        "@semantic-release/release-notes-generator",
         [
             "@semantic-release/exec",
             {
@@ -26,7 +27,7 @@
             "@semantic-release/git",
             {
                 "assets": ["pyproject.toml", "uv.lock"],
-                "message": "🔖 camply ${nextRelease.version}\n\n${nextRelease.notes}\n[skip ci]"
+                "message": "chore(release): camply ${nextRelease.version}\n\n${nextRelease.notes}\n[skip ci]"
             }
         ],
         [

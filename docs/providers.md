@@ -60,6 +60,19 @@ camply campgrounds --provider Aspira --rec-area 3
 camply campsites --provider Aspira --rec-area 3 --campground 290125     --start-date 2026-11-24 --end-date 2026-11-27
 ```
 
+`--booking-category` picks what to search: `0` Camping (default), `1` Day Use or `2`
+Backcountry Camping permits, where the province offers it (PEI is camping only). Each
+category has its own campgrounds, so pass the same `--booking-category` to
+`camply campgrounds`:
+
+```shell
+camply campgrounds --provider Aspira --rec-area 1 --booking-category 2
+camply campsites --provider Aspira --rec-area 1 --booking-category 2 --campground 331053 --start-date 2027-07-10 --end-date 2027-07-12
+```
+
+A backcountry campground matches only when a permit is available for every night of the
+stay.
+
 These sites sit behind a waiting-room queue; camply waits for it to redirect back to the
 site. Because of the queue, Aspira parks can only be searched once: `--continuous` and
 `--search-forever` aren't supported, and notifications need `--search-once` (a YAML

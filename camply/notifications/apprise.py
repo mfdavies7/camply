@@ -68,10 +68,10 @@ class AppriseNotifications(BaseNotifications):
             message_title, formatted_dict = self.format_standard_campsites(
                 campsite=campsite,
             )
-            fields = [f"🏕{message_title}", ""]
+            fields = [f"{message_title}", ""]
             for key, value in formatted_dict.items():
                 fields.append(f"{key}: {value}")
             fields.append("")
-            fields.append("camply, the campsite finder ⛺️")
+            fields.append("camply, the campsite finder")
             composed_message = "\n".join(fields)
             self.send_message(message=composed_message)

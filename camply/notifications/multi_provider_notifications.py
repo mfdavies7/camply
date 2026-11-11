@@ -121,7 +121,7 @@ class MultiNotifierProvider(BaseNotifications):
         date_string = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         error_string = str(error)
         error_message = (
-            "camply encountered an error and exited 😟 "
+            "camply encountered an error and exited "
             f"[{date_string}] - ({error.__class__.__name__}) {error_string}"
         )
         for provider in self.providers:

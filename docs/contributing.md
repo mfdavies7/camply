@@ -83,19 +83,16 @@ hooks manually, or they will be set up when you run `task install`.
 
 This project uses [semantic-versioning] standards, managed by [semantic-release].
 Releases for this project are handled entirely by CI/CD via pull requests being
-merged into the `main` branch. Contributions follow the [gitmoji] standards
-with [conventional commits].
+merged into the `main` branch. Contributions follow [conventional commits]. Do not use emoji in commit messages.
 
-While you can denote other changes on your commit messages with [gitmoji], the following
-commit message emoji prefixes are the only ones to trigger new releases:
+The following commit types trigger new releases:
 
-| Emoji | Shortcode     | Description                 | Semver |
-| ----- | ------------- | --------------------------- | ------ |
-| 💥    | `:boom:`      | Introduce breaking changes. | Major  |
-| ✨    | `:sparkles:`  | Introduce new features.     | Minor  |
-| 🐛    | `:bug:`       | Fix a bug.                  | Patch  |
-| 🚑    | `:ambulance:` | Critical hotfix.            | Patch  |
-| 🔒    | `:lock:`      | Fix security issues.        | Patch  |
+| Type                                 | Description                 | Semver |
+| ------------------------------------ | --------------------------- | ------ |
+| `feat!:` / `BREAKING CHANGE:` footer | Introduce breaking changes. | Major  |
+| `feat:`                              | Introduce new features.     | Minor  |
+| `fix:`                               | Fix a bug.                  | Patch  |
+| `perf:`                              | Improve performance.        | Patch  |
 
 Most features can be squash merged into a single commit on a pull-request.
 When merging multiple commits, they will be summarized into a single release.
@@ -103,30 +100,30 @@ When merging multiple commits, they will be summarized into a single release.
 If you're working on a new feature, your commit message might look like:
 
 ```text
-✨ New Feature Description
+feat: New Feature Description
 ```
 
 Bug fix commits would look like this:
 
 ```text
-🐛 Bug Fix Description
+fix: Bug Fix Description
 ```
 
 If you're working on a feature that introduces breaking changes, your
 commit message might look like:
 
 ```text
-💥 Breaking Change Description
+feat!: Breaking Change Description
 ```
 
 Other commits that don't trigger a release might look like this:
 
 ```text
-📝 Documentation Update Description
-👷 CI/CD Update Description
-🧪 Testing Changes Description
-🚚 Moving/Renaming Description
-⬆️ Dependency Upgrade Description
+docs: Documentation Update Description
+ci: CI/CD Update Description
+test: Testing Changes Description
+refactor: Moving/Renaming Description
+build: Dependency Upgrade Description
 ```
 
 ### Pre-Releases
@@ -146,7 +143,6 @@ See the [semantic-release documentation] for more information about
 branch based releases and other advanced release cases.
 
 [conventional commits]: https://www.conventionalcommits.org/en/v1.0.0/
-[gitmoji]: https://gitmoji.dev/
 [pre-commit]: https://pre-commit.com/
 [semantic-release]: https://github.com/semantic-release/semantic-release
 [semantic-release documentation]: https://semantic-release.gitbook.io/semantic-release/usage/configuration#branches

@@ -30,6 +30,7 @@ class SearchGoingToCamp(BaseCampingSearch):
     """
 
     provider_class = GoingToCamp
+    campsite_finder: GoingToCamp
     list_campsites_supported: bool = False
 
     @classmethod

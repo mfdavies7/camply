@@ -30,18 +30,18 @@ remote_branch: gh-pages
 copyright: Copyright &copy; 2020 Justin Flannery
 extra_css: [extra.css]
 nav:
-    - camply ⛺: index.md
-    - Installation ☀️: installation.md
-    - Providers 🏕: providers.md
-    - Usage 📝: command_line_usage.md
-    - How To Run Camply 🏃: how_to_run.md
-    - Object Oriented Usage 🐍: python.md
-    - Command Line Interface ⌨️: cli.md
-    - API Documentation 🤖: reference/
-    - Dependencies ♻️: dependencies.md
-    - Contributing 🤝: contributing.md
-    - GitHub 🛠: https://github.com/juftin/camply
-    - Changelog 📝: https://github.com/juftin/camply/releases
+    - camply: index.md
+    - Installation: installation.md
+    - Providers: providers.md
+    - Usage: command_line_usage.md
+    - How To Run Camply: how_to_run.md
+    - Object Oriented Usage: python.md
+    - Command Line Interface: cli.md
+    - API Documentation: reference/
+    - Dependencies: dependencies.md
+    - Contributing: contributing.md
+    - GitHub: https://github.com/juftin/camply
+    - Changelog: https://github.com/juftin/camply/releases
 extra:
     generator: false
 markdown_extensions:

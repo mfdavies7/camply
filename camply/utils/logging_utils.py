@@ -8,12 +8,6 @@ from typing import Any, List, Union
 from camply.containers import CampgroundFacility, RecreationArea
 from camply.containers.base_container import GoingToCampEquipment
 
-CALENDARMOJI = "📅"
-CAMPMOJI = "🏕"
-TENTMOJI = "⛺️"
-XMOJI = "❌"
-RVMOJI = "🚌"
-
 logger = logging.getLogger(__name__)
 
 
@@ -35,16 +29,16 @@ def format_log_string(response: Union[CampgroundFacility, RecreationArea, str]) 
         else:
             facil = response.facility_id
         return (
-            f"⛰  {response.recreation_area} (#{response.recreation_area_id}) - "
-            f"🏕  {response.facility_name} ({facil})"
+            f"{response.recreation_area} (#{response.recreation_area_id}) - "
+            f"{response.facility_name} ({facil})"
         )
     elif isinstance(response, RecreationArea):
         return (
-            f"⛰  {response.recreation_area}, {response.recreation_area_location} "
+            f"{response.recreation_area}, {response.recreation_area_location} "
             f"(#{response.recreation_area_id})"
         )
     elif isinstance(response, GoingToCampEquipment):
-        return f"{RVMOJI} {response.equipment_name} " f"(#{response.equipment_type_id})"
+        return f"{response.equipment_name} (#{response.equipment_type_id})"
     elif isinstance(response, str):
         return response
     else:
@@ -67,25 +61,6 @@ def log_sorted_response(response_array: List[Any]) -> None:
     sorted_logs = sorted(log_array)
     for log_response in sorted_logs:
         logger.info(log_response)
-
-
-def get_emoji(obj: list) -> str:
-    """
-    Return the Right Emoji
-
-    Parameters
-    ----------
-    obj: list
-
-    Returns
-    -------
-    str
-    """
-    assert isinstance(obj, list)
-    if len(obj) >= 1:
-        return TENTMOJI
-    else:
-        return XMOJI
 
 
 def log_camply(self: logging.Logger, message: str, *args, **kwargs) -> None:

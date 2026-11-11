@@ -40,4 +40,4 @@ Configuration comes from env vars, with `~/.camply` loaded as a dotenv file (`co
 ## Conventions
 
 - Ruff with absolute imports only (relative imports banned outside tests), numpy-style docstrings. Python ≥3.9 support — avoid newer-only syntax.
-- Commits use gitmoji; releases via semantic-release. Pre-commit blocks commits directly to `main`.
+- Commits use conventional commits; no emoji anywhere in the project (code, docs, commit messages); releases via semantic-release. Pre-commit blocks commits directly to `main`.

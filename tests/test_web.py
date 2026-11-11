@@ -4,6 +4,7 @@ Web UI request handling (no network)
 
 import json
 
+from camply.providers import Aspira
 from camply.web import handle_api
 
 
@@ -22,11 +23,16 @@ def test_parks_listed() -> None:
     } in parks
 
 
-def test_aspira_booking_categories() -> None:
+def test_aspira_booking_categories(monkeypatch) -> None:
+    monkeypatch.setattr(
+        Aspira,
+        "list_booking_categories",
+        lambda self, r: [{"id": 2, "name": "Backcountry Camping"}],
+    )
     status, categories = handle_api(
         "GET", "/api/booking_categories", "rec_area=aspira-1", b""
     )
-    assert status == 200 and categories == [{"id": 0, "name": "Campsite"}]
+    assert status == 200 and categories == [{"id": 2, "name": "Backcountry Camping"}]
 
 
 def test_search_validation() -> None:

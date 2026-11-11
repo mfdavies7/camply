@@ -5,7 +5,7 @@
 </a>
 </div>
 
-**`camply`**, the campsite finder ⛺️, is a tool to help you book a campsite online. Finding
+**`camply`**, the campsite finder, is a tool to help you book a campsite online. Finding
 reservations at sold out campgrounds can be tough. That's where camply comes in. It searches
 Canadian national, provincial and regional parks via the [GoingToCamp](https://goingtocamp.com)
 booking platform. It continuously checks for cancellations and
@@ -27,7 +27,6 @@ to book your spot!
   <a href="https://github.com/pre-commit/pre-commit"><img src="https://img.shields.io/badge/pre--commit-enabled-lightgreen?logo=pre-commit" alt="pre-commit"></a>
   <a href="https://juftin.github.io/camply/"><img src="https://img.shields.io/static/v1?message=docs&color=526CFE&logo=Material+for+MkDocs&logoColor=FFFFFF&label=" alt="docs"></a>
   <a href="https://github.com/semantic-release/semantic-release"><img src="https://img.shields.io/badge/%20%20%F0%9F%93%A6%F0%9F%9A%80-semantic--release-e10079.svg" alt="semantic-release"></a>
-  <a href="https://gitmoji.dev"><img src="https://img.shields.io/badge/gitmoji-%20😜%20😍-FFDD67.svg" alt="Gitmoji"></a>
 </p>
 
 ## [Check Out The Docs](https://juftin.com/camply/)
@@ -129,7 +128,7 @@ Head over to the [camply documentation](https://juftin.com/camply/) to see what 
 ## Contributing
 
 Camply doesn't support your favorite campsite booking provider yet? Consider
-[contributing](https://juftin.com/camply/contributing/) 😉.
+[contributing](https://juftin.com/camply/contributing/).
 
 ---
 

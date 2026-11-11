@@ -7,7 +7,7 @@
 </a>
 </div>
 
-**`camply`**, the campsite finder ⛺️, is a tool to help you book a campsite online. Finding
+**`camply`**, the campsite finder, is a tool to help you book a campsite online. Finding
 reservations at sold out campgrounds can be tough. That's where camply comes in. It searches
 Canadian national, provincial and regional parks via the [GoingToCamp](https://goingtocamp.com)
 booking platform. It continuously checks for cancellations and
@@ -18,7 +18,7 @@ to book your spot!
 
 ---
 
-[![PyPI](https://img.shields.io/pypi/v/camply?color=blue&label=⛺️camply)](https://github.com/juftin/camply)
+[![PyPI](https://img.shields.io/pypi/v/camply?color=blue&label=camply)](https://github.com/juftin/camply)
 [![PyPI - Python Version](https://img.shields.io/pypi/pyversions/camply)](https://pypi.python.org/pypi/camply/)
 [![Docker Image Version](https://img.shields.io/docker/v/juftin/camply?color=blue&label=docker&logo=docker)](https://hub.docker.com/r/juftin/camply)
 [![Testing Status](https://github.com/juftin/camply/actions/workflows/test.yaml/badge.svg?branch=main)](https://github.com/juftin/camply/actions/workflows/test.yaml)
@@ -26,7 +26,6 @@ to book your spot!
 [![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
 [![pre-commit](https://img.shields.io/badge/pre--commit-enabled-lightgreen?logo=pre-commit)](https://github.com/pre-commit/pre-commit)
 [![semantic-release](https://img.shields.io/badge/%20%20%F0%9F%93%A6%F0%9F%9A%80-semantic--release-e10079.svg)](https://github.com/semantic-release/semantic-release)
-[![Gitmoji](https://img.shields.io/badge/gitmoji-%20😜%20😍-FFDD67.svg)](https://gitmoji.dev)
 [![Discord Chat](https://img.shields.io/static/v1?label=chat&message=discord&color=blue&logo=discord)](https://discord.gg/qZDr78kKvB)
 
 ## Table of Contents

@@ -8,7 +8,12 @@ from datetime import datetime, time
 from typing import Any, List, Optional, Union
 
 from camply.containers import AvailableCampsite, RecreationArea, SearchWindow
-from camply.providers.aspira.aspira_provider import Aspira
+from camply.providers.aspira.aspira_provider import (
+    BACKCOUNTRY,
+    DAY_USE,
+    DAY_USE_LOOKING_FOR,
+    Aspira,
+)
 from camply.search.base_search import BaseCampingSearch
 from camply.utils import make_list
 
@@ -21,11 +26,12 @@ class SearchAspira(BaseCampingSearch):
     """
 
     provider_class = Aspira
+    campsite_finder: Aspira
     list_campsites_supported: bool = False
 
     @classmethod
     def find_recreation_areas(
-        cls, search_string: Optional[str] = None, **kwargs
+        cls, search_string: Optional[str] = None, **kwargs: Any
     ) -> List[RecreationArea]:
         """
         Return the Aspira Recreation Areas
@@ -40,7 +46,8 @@ class SearchAspira(BaseCampingSearch):
         campsites: Optional[Union[List[int], int]] = None,
         weekends_only: bool = False,
         nights: int = 1,
-        **kwargs,
+        booking_category_id: Optional[int] = None,
+        **kwargs: Any,
     ) -> None:
         """
         Initialize with Search Parameters
@@ -59,6 +66,8 @@ class SearchAspira(BaseCampingSearch):
             Only search Friday / Saturday nights
         nights: int
             minimum number of consecutive nights to search per campsite
+        booking_category_id: Optional[int]
+            0 camping (default), 1 day use or 2 backcountry permits
         """
         super().__init__(
             search_window=search_window,
@@ -66,20 +75,24 @@ class SearchAspira(BaseCampingSearch):
             nights=nights,
             **kwargs,
         )
-        recreation_area = make_list(recreation_area)
-        if len(recreation_area) != 1 or not make_list(campgrounds):
+        rec_areas = make_list(recreation_area, coerce=int) or []
+        campground_ids = make_list(campgrounds, coerce=int) or []
+        if len(rec_areas) != 1 or not campground_ids:
             logger.error(
                 "Aspira searches need exactly one --rec-area and at least one --campground"
             )
             sys.exit(1)
-        self._recreation_area_id = int(recreation_area[0])
-        self.campsites = {int(c) for c in make_list(campsites or [])}
+        self._recreation_area_id: int = rec_areas[0]
+        self.booking_category_id = int(booking_category_id or 0)
+        self.campsites = set(make_list(campsites, coerce=int) or [])
         self.campgrounds = self.campsite_finder.find_campgrounds(
-            rec_area_id=self._recreation_area_id, campground_id=campgrounds
+            rec_area_id=rec_areas,
+            campground_id=campground_ids,
+            booking_category_id=self.booking_category_id,
         )
 
-    def get_matching_campsites(
-        self, continuous: bool = False, search_once: bool = False, **kwargs
+    def get_matching_campsites(  # type: ignore[override]
+        self, continuous: bool = False, search_once: bool = False, **kwargs: Any
     ) -> List[AvailableCampsite]:
         """
         Search, refusing continuous searches: these sites sit behind a queue
@@ -104,12 +117,24 @@ class SearchAspira(BaseCampingSearch):
             start_date = search_window.get_current_start_date()
             nights = (search_window.end_date - start_date).days
             for campground in self.campgrounds:
-                for site in self.campsite_finder.list_available_sites(
-                    rec_area_id=self._recreation_area_id,
-                    park_id=campground.facility_id,
-                    start_date=start_date,
-                    nights=nights,
-                ):
+                if self.booking_category_id == BACKCOUNTRY:
+                    sites = self.campsite_finder.list_backcountry_sites(
+                        rec_area_id=self._recreation_area_id,
+                        park_id=int(campground.facility_id),
+                        start_date=start_date,
+                        nights=nights,
+                    )
+                else:
+                    sites = self.campsite_finder.list_available_sites(
+                        rec_area_id=self._recreation_area_id,
+                        park_id=int(campground.facility_id),
+                        start_date=start_date,
+                        nights=nights,
+                        looking_for=DAY_USE_LOOKING_FOR
+                        if self.booking_category_id == DAY_USE
+                        else None,
+                    )
+                for site in sites:
                     if self.campsites and site["site_id"] not in self.campsites:
                         continue
                     available_sites.append(
@@ -131,6 +156,8 @@ class SearchAspira(BaseCampingSearch):
                             facility_name=campground.facility_name,
                             facility_id=campground.facility_id,
                             booking_url=site["booking_url"],
+                            permitted_equipment=None,
+                            campsite_attributes=None,
                         )
                     )
         return available_sites

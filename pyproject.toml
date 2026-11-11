@@ -30,7 +30,7 @@ dependencies = [
   "rich-click~=1.6.1",
   "tenacity~=8.2.2"
 ]
-description = "camply, the campsite finder 🏕"
+description = "camply, the campsite finder"
 keywords = ["recdotgov", "outdoors", "camping", "reservations", "national-parks"]
 license = "MIT"
 name = "camply"
@@ -118,6 +118,11 @@ ignore_missing_imports = true
 no_implicit_reexport = true
 warn_redundant_casts = true
 warn_unused_ignores = true
+
+[[tool.mypy.overrides]]
+# shortcut: untyped instead of the types-requests stubs; add them on the next `task lock`
+ignore_missing_imports = true
+module = ["requests", "requests.*"]
 
 [tool.pytest.ini_options]
 addopts = [

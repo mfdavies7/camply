@@ -176,7 +176,7 @@ class GoingToCamp(BaseProvider):
         if log:
             for category in sorted(categories, key=lambda c: c["bookingCategoryId"]):
                 logger.info(
-                    f"📌 {category['bookingCategoryId']}: {booking_category_name(category)}"
+                    f"{category['bookingCategoryId']}: {booking_category_name(category)}"
                 )
         return categories
 

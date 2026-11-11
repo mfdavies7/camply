@@ -9,7 +9,7 @@ import json
 import logging
 import webbrowser
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
-from typing import Any, Dict, Tuple
+from typing import Any, Dict, List, Tuple
 from urllib.parse import parse_qs, urlparse
 
 from camply.containers import SearchWindow
@@ -21,7 +21,9 @@ from camply.providers.going_to_camp.going_to_camp_provider import (
     booking_category_name,
 )
 from camply.providers.going_to_camp.rec_areas import RECREATION_AREAS
-from camply.search import SearchAspira, SearchGoingToCamp
+from camply.search.base_search import BaseCampingSearch
+from camply.search.search_aspira import SearchAspira
+from camply.search.search_going_to_camp import SearchGoingToCamp
 
 logger = logging.getLogger(__name__)
 
@@ -47,7 +49,7 @@ def _parse_park(rec_area: Any) -> Tuple[bool, int]:
     return is_aspira, int(value[len(ASPIRA_PREFIX) :] if is_aspira else value)
 
 
-def list_parks() -> list:
+def list_parks() -> List[Dict[str, Any]]:
     """
     All GoingToCamp and Aspira parks, sorted by name
     """
@@ -68,13 +70,13 @@ def list_parks() -> list:
     )
 
 
-def list_booking_categories(rec_area: Any) -> list:
+def list_booking_categories(rec_area: Any) -> List[Dict[str, Any]]:
     """
     Reservation services of one park (Campsite, Backcountry, Roofed, ...)
     """
     is_aspira, rec_area = _parse_park(rec_area)
     if is_aspira:
-        return [{"id": 0, "name": "Campsite"}]
+        return Aspira().list_booking_categories(rec_area)
     return [
         {"id": c["bookingCategoryId"], "name": booking_category_name(c)}
         for c in sorted(
@@ -84,24 +86,26 @@ def list_booking_categories(rec_area: Any) -> list:
     ]
 
 
-def list_campgrounds(rec_area: Any, booking_category: int = 0) -> list:
+def list_campgrounds(rec_area: Any, booking_category: int = 0) -> List[Dict[str, Any]]:
     """
     Campgrounds within one park offering a reservation service (calls the API)
     """
     is_aspira, rec_area = _parse_park(rec_area)
     if is_aspira:
-        facilities = Aspira().find_campgrounds(rec_area_id=[rec_area])
+        facilities = Aspira().find_campgrounds(
+            rec_area_id=[rec_area], booking_category_id=booking_category
+        )
     else:
         facilities = GoingToCamp().find_campgrounds(
             rec_area_id=[rec_area], booking_category_id=booking_category
         )
     return sorted(
         ({"id": f.facility_id, "name": f.facility_name} for f in facilities),
-        key=lambda c: c["name"],
+        key=lambda c: c["name"].casefold(),
     )
 
 
-def search(body: Dict[str, Any]) -> list:
+def search(body: Dict[str, Any]) -> List[Dict[str, Any]]:
     """
     Run a single (non-continuous) campsite search from the form fields
     """
@@ -125,12 +129,14 @@ def search(body: Dict[str, Any]) -> list:
         # GoingToCamp and Aspira only allow searching one campground at a time
         raise ValueError("Please choose a campground")
     window = SearchWindow(start_date=start, end_date=end)
+    camp_search: BaseCampingSearch
     if is_aspira:
         camp_search = SearchAspira(
             search_window=window,
             recreation_area=[rec_area],
-            campgrounds=[campground],
+            campgrounds=[int(campground)],
             nights=nights,
+            booking_category_id=int(body.get("booking_category") or 0),
         )
     else:
         camp_search = SearchGoingToCamp(
