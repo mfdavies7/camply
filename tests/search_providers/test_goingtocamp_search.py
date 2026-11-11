@@ -7,8 +7,8 @@ from datetime import datetime
 
 import pytest
 
-from camply.containers import AvailableCampsite, SearchWindow
-from camply.search import SearchGoingToCamp
+from spotsnagger.containers import AvailableCampsite, SearchWindow
+from spotsnagger.search import SearchGoingToCamp
 from tests.conftest import vcr_cassette
 
 logger = logging.getLogger(__name__)

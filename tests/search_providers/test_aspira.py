@@ -8,8 +8,8 @@ from unittest import mock
 
 import pytest
 
-from camply.providers.aspira import aspira_provider
-from camply.providers.aspira.aspira_provider import (
+from spotsnagger.providers.aspira import aspira_provider
+from spotsnagger.providers.aspira.aspira_provider import (
     Aspira,
     parse_campground_directory,
     parse_interests,
@@ -17,7 +17,7 @@ from camply.providers.aspira.aspira_provider import (
     parse_search_results,
     parse_site_list,
 )
-from camply.search.search_aspira import SearchAspira
+from spotsnagger.search.search_aspira import SearchAspira
 
 # Trimmed from parks.saskatchewan.ca pages
 DIRECTORY = (

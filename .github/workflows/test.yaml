@@ -5,13 +5,13 @@ on:
         branches:
             - main
         paths:
-            - camply/**
+            - spotsnagger/**
             - pyproject.toml
             - uv.lock
             - .github/workflows/test.yaml
     pull_request:
         paths:
-            - camply/**
+            - spotsnagger/**
             - pyproject.toml
             - uv.lock
             - .github/workflows/test.yaml
@@ -20,7 +20,7 @@ on:
 jobs:
     test:
         env:
-            CAMPLY_LOG_HANDLER: PYTHON
+            SPOTSNAGGER_LOG_HANDLER: PYTHON
         runs-on: ubuntu-latest
         strategy:
             fail-fast: true

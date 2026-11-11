@@ -1,21 +1,21 @@
 """
-CLI Testing - Campsites: `camply campsites...`
+CLI Testing - Campsites: `spotsnagger campsites...`
 """
 
 import logging
 
-from tests.conftest import CamplyRunner, cli_status_checker, vcr_cassette
+from tests.conftest import SpotSnaggerRunner, cli_status_checker, vcr_cassette
 
 logger = logging.getLogger(__name__)
 
 
 @vcr_cassette
-def test_multiple_search_windows_goingtocamp(cli_runner: CamplyRunner) -> None:
+def test_multiple_search_windows_goingtocamp(cli_runner: SpotSnaggerRunner) -> None:
     """
     Multiple Search Windows: GoingToCamp
     """
     test_command = """
-    camply \
+    spotsnagger \
       campsites \
       --provider goingtocamp \
       --rec-area 1 \
@@ -26,7 +26,7 @@ def test_multiple_search_windows_goingtocamp(cli_runner: CamplyRunner) -> None:
       --equipment-id -32768 \
       --campground -2147483643
     """
-    result = cli_runner.run_camply_command(command=test_command)
+    result = cli_runner.run_spotsnagger_command(command=test_command)
     assert "2 different months selected for search" in result.output
     assert "2 booking nights selected for search" in result.output
     assert "Long Point Region" in result.output

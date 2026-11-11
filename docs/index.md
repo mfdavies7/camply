@@ -1,17 +1,17 @@
-# camply
+# spotsnagger
 
 <div align="center">
 <a href="https://github.com/juftin/camply">
   <img src="https://raw.githubusercontent.com/juftin/camply/main/docs/_static/camply.svg"
-    width="400" height="400" alt="camply">
+    width="400" height="400" alt="spotsnagger">
 </a>
 </div>
 
-**`camply`**, the campsite finder, is a tool to help you book a campsite online. Finding
-reservations at sold out campgrounds can be tough. That's where camply comes in. It searches
+**`spotsnagger`**, the campsite finder, is a tool to help you book a campsite online. Finding
+reservations at sold out campgrounds can be tough. That's where spotsnagger comes in. It searches
 Canadian national, provincial and regional parks via the [GoingToCamp](https://goingtocamp.com)
 booking platform. It continuously checks for cancellations and
-availabilities to pop up - once a campsite becomes available, camply sends you a notification
+availabilities to pop up - once a campsite becomes available, spotsnagger sends you a notification
 to book your spot!
 
 ---
@@ -63,9 +63,9 @@ to book your spot!
         - [Saving the Results of a Search](command_line_usage.md#saving-the-results-of-a-search)
         - [Search for Recreation Areas by Query String](command_line_usage.md#search-for-recreation-areas-by-query-string)
         - [Look for Specific Campgrounds Within a Recreation Area](command_line_usage.md#look-for-specific-campgrounds-within-a-recreation-area)
-        - [Run camply as a CRON Job](command_line_usage.md#run-camply-as-a-cron-job)
+        - [Run spotsnagger as a CRON Job](command_line_usage.md#run-spotsnagger-as-a-cron-job)
         - [Send a Webhook Notification](command_line_usage.md#send-a-webhook-notification)
-- [How to Run Camply](how_to_run.md#how-to-run-camply)
+- [How to Run SpotSnagger](how_to_run.md#how-to-run-spotsnagger)
     - [Run Modes](how_to_run.md#run-modes)
         - [non-continuous](how_to_run.md#non-continuous)
         - [continuous](how_to_run.md#continuous)

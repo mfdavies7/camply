@@ -19,7 +19,7 @@ RUN --mount=from=ghcr.io/astral-sh/uv,source=/uv,target=/bin/uv \
 COPY README.md /app/README.md
 COPY pyproject.toml /app/pyproject.toml
 COPY uv.lock /app/uv.lock
-COPY camply /app/camply
+COPY spotsnagger /app/spotsnagger
 
 # Install project
 RUN --mount=from=ghcr.io/astral-sh/uv,source=/uv,target=/bin/uv \
@@ -30,14 +30,14 @@ RUN --mount=from=ghcr.io/astral-sh/uv,source=/uv,target=/bin/uv \
 
 ENV PATH="/app/.venv/bin:${PATH}"
 
-ENV HOME=/home/camply
+ENV HOME=/home/spotsnagger
 RUN mkdir ${HOME}
 WORKDIR ${HOME}
-ENV CAMPLY_LOG_HANDLER="PYTHON"
+ENV SPOTSNAGGER_LOG_HANDLER="PYTHON"
 
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 
-RUN _CAMPLY_COMPLETE=bash_source camply > ${HOME}/.camply-complete.bash && \
-    echo "[[ ! -f ${HOME}/.camply-complete.bash ]] || source ${HOME}/.camply-complete.bash" >> ${HOME}/.bashrc
+RUN _SPOTSNAGGER_COMPLETE=bash_source spotsnagger > ${HOME}/.spotsnagger-complete.bash && \
+    echo "[[ ! -f ${HOME}/.spotsnagger-complete.bash ]] || source ${HOME}/.spotsnagger-complete.bash" >> ${HOME}/.bashrc
 
-CMD ["camply", "--help"]
+CMD ["spotsnagger", "--help"]

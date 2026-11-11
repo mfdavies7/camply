@@ -8,9 +8,9 @@ from typing import Optional
 import pytest
 from pytest import LogCaptureFixture, MonkeyPatch
 
-from camply import AvailableCampsite
-from camply.config import PushoverConfig
-from camply.notifications import PushoverNotifications
+from spotsnagger import AvailableCampsite
+from spotsnagger.config import PushoverConfig
+from spotsnagger.notifications import PushoverNotifications
 from tests.conftest import vcr_cassette
 
 
@@ -46,7 +46,7 @@ def test_pushover_default_token_warning_at_initialization(
     monkeypatch.setattr(PushoverConfig, "PUSH_USER", "test-user")
     monkeypatch.setattr(PushoverConfig, "PUSH_TOKEN", token)
 
-    with caplog.at_level(logging.WARNING, logger="camply.notifications.pushover"):
+    with caplog.at_level(logging.WARNING, logger="spotsnagger.notifications.pushover"):
         PushoverNotifications()
         warnings = [
             record

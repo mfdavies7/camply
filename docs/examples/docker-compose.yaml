@@ -1,12 +1,12 @@
 version: "3.7"
 services:
-    camply:
-        container_name: camply-docker-compose-example
+    spotsnagger:
+        container_name: spotsnagger-docker-compose-example
         image: juftin/camply:latest
         environment:
             TZ: America/Denver
         volumes:
-            - ${PWD}/example.camply:/home/camply/.camply
-            - ${PWD}/example_search.yaml:/home/camply/search.yaml
-        command: camply campsites --yaml-config /home/camply/search.yaml
+            - ${PWD}/example.spotsnagger:/home/spotsnagger/.spotsnagger
+            - ${PWD}/example_search.yaml:/home/spotsnagger/search.yaml
+        command: spotsnagger campsites --yaml-config /home/spotsnagger/search.yaml
         restart: unless-stopped

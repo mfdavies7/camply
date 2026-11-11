@@ -5,13 +5,13 @@ from pathlib import Path
 
 import mkdocs_gen_files
 
-from camply.config import FileConfig
-from camply.containers.search_model import YamlSearchFile
+from spotsnagger.config import FileConfig
+from spotsnagger.containers.search_model import YamlSearchFile
 
 logger = logging.getLogger(__name__)
 
 project_dir = Path(__file__).resolve().parent.parent
-source_code = project_dir.joinpath("camply")
+source_code = project_dir.joinpath("spotsnagger")
 nav = mkdocs_gen_files.Nav()
 
 for path in sorted(source_code.rglob("*.py")):

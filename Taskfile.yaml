@@ -7,7 +7,7 @@ env:
     PUSHOVER_PUSH_TOKEN: placeholder
     PUSHOVER_PUSH_USER: placeholder
 vars:
-    SOURCE_CODE: "camply"
+    SOURCE_CODE: "spotsnagger"
     DOCKER_REPO: juftin/camply
 
 tasks:

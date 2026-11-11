@@ -1,17 +1,17 @@
-# How to Run Camply
+# How to Run SpotSnagger
 
 ## Run Modes
 
 ### non-continuous
 
-camply's default run-mode is **"non-continuous"**. This means that camply runs a search with your custom
-campsite query once. Once this search is complete camply will exit whether it found any matching campsites or not.
+spotsnagger's default run-mode is **"non-continuous"**. This means that spotsnagger runs a search with your custom
+campsite query once. Once this search is complete spotsnagger will exit whether it found any matching campsites or not.
 [\*\*example](command_line_usage.md#searching-for-a-campsite)
 
 ### continuous
 
-Second, camply has a **"continuous"** mode. Differently from the "non-continuous" mode, camply will continue
-to search until it finds at least one matching campsite. camply sleeps in between searches so we don't overload
+Second, spotsnagger has a **"continuous"** mode. Differently from the "non-continuous" mode, spotsnagger will continue
+to search until it finds at least one matching campsite. spotsnagger sleeps in between searches so we don't overload
 our friends who run the camping APIs. [\*\*example](command_line_usage.md#continuously-searching-for-a-campsite)
 
 !!! note
@@ -22,7 +22,7 @@ our friends who run the camping APIs. [\*\*example](command_line_usage.md#contin
 
 !!! important
 
-    When you run camply in **"continuous"** or **"search-forever"** mode it needs to run as a continuous
+    When you run spotsnagger in **"continuous"** or **"search-forever"** mode it needs to run as a continuous
     Python process in your terminal. This means that you need an always-on computer to run your search.
 
     A small computing device like a Raspberry Pi is perfect for something like this. If you're looking to
@@ -30,8 +30,8 @@ our friends who run the camping APIs. [\*\*example](command_line_usage.md#contin
 
 ### search-forever
 
-Third, camply has its **"search-forever"** mode. This is slightly different from the "continuous" mode because it will
-continue to run even after it's found its first matching campsite. camply remembers which campsites it's found
+Third, spotsnagger has its **"search-forever"** mode. This is slightly different from the "continuous" mode because it will
+continue to run even after it's found its first matching campsite. spotsnagger remembers which campsites it's found
 before and won't notify you for the same campsite twice.
 [\*\*example](command_line_usage.md#continue-looking-after-the-first-match-is-found)
 
@@ -41,10 +41,10 @@ before and won't notify you for the same campsite twice.
 
 ### search-once
 
-Lastly, camply has its **"search-once"** mode. This enables some features of continuous searching, like the
+Lastly, spotsnagger has its **"search-once"** mode. This enables some features of continuous searching, like the
 ability to send notifications, but without actually running continuously. This is useful if you're
-interested in running camply as a CRON job instead of as a blocking python process.
-[\*\*example](command_line_usage.md#run-camply-as-a-cron-job)
+interested in running spotsnagger as a CRON job instead of as a blocking python process.
+[\*\*example](command_line_usage.md#run-spotsnagger-as-a-cron-job)
 
 !!! note
 
@@ -52,8 +52,8 @@ interested in running camply as a CRON job instead of as a blocking python proce
 
 ## Running in Docker
 
-Docker is a great solution to run camply wherever you are. There is an official docker image published alongside
-camply's PyPI distribution that makes running camply in the background as a detached container really easy.
+Docker is a great solution to run spotsnagger wherever you are. There is an official docker image published alongside
+spotsnagger's PyPI distribution that makes running spotsnagger in the background as a detached container really easy.
 
 ```shell
 docker pull juftin/camply
@@ -64,12 +64,12 @@ container will run detached).
 
 ```commandline
 docker run --rm -d \
-  --name camply-detached-example \
+  --name spotsnagger-detached-example \
   --env PUSHOVER_PUSH_TOKEN=${PUSHOVER_PUSH_TOKEN} \
   --env PUSHOVER_PUSH_USER=${PUSHOVER_PUSH_USER} \
   --env TZ="America/Denver" \
   juftin/camply \
-  camply campsites \
+  spotsnagger campsites \
       --rec-area 14 \
       --campground -2147483643 \
       --start-date 2023-08-01 \
@@ -78,17 +78,17 @@ docker run --rm -d \
       --notifications pushover
 ```
 
-See the [Environment Variables](#environment-variables) section for a list of environment variables camply uses.
-Alternatively, if you have already run `camply configure` locally, you can share
-your [`.camply`](examples/example.camply) file inside the docker container.
+See the [Environment Variables](#environment-variables) section for a list of environment variables spotsnagger uses.
+Alternatively, if you have already run `spotsnagger configure` locally, you can share
+your [`.spotsnagger`](examples/example.spotsnagger) file inside the docker container.
 
 ```commandline
 docker run --rm \
-  --name camply-file-share-example \
+  --name spotsnagger-file-share-example \
   --env TZ="America/Denver" \
-  --volume ${HOME}/.camply:/home/camply/.camply \
+  --volume ${HOME}/.spotsnagger:/home/spotsnagger/.spotsnagger \
   juftin/camply \
-  camply campsites \
+  spotsnagger campsites \
       --rec-area 14 \
       --campground -2147483643 \
       --start-date 2023-07-22 \
@@ -102,15 +102,15 @@ configuration files:
 
 ```commandline
 docker run --rm -d \
-  --name camply-email-example \
+  --name spotsnagger-email-example \
   --env TZ="America/Denver" \
   --env EMAIL_TO_ADDRESS=${EMAIL_TO_ADDRESS} \
   --env EMAIL_USERNAME=${EMAIL_USERNAME} \
   --env EMAIL_PASSWORD=${EMAIL_PASSWORD} \
-  --volume example_search.yaml:/home/camply/example_search.yaml \
+  --volume example_search.yaml:/home/spotsnagger/example_search.yaml \
   juftin/camply:latest \
-  camply campsites \
-      --yaml-config /home/camply/example_search.yaml
+  spotsnagger campsites \
+      --yaml-config /home/spotsnagger/example_search.yaml
 ```
 
 A [docker-compose example](examples/docker-compose.yaml) of the above YAML Config is also
@@ -126,8 +126,8 @@ available.
     - `EMAIL_TO_ADDRESS`
     - `EMAIL_USERNAME`
     - `EMAIL_PASSWORD`
-    - `EMAIL_FROM_ADDRESS` (defaults to "camply@juftin.com")
-    - `EMAIL_SUBJECT_LINE` (defaults to "camply Notification")
+    - `EMAIL_FROM_ADDRESS` (defaults to "spotsnagger@juftin.com")
+    - `EMAIL_SUBJECT_LINE` (defaults to "spotsnagger Notification")
     - `EMAIL_SMTP_SERVER` (defaults to "smtp.gmail.com")
     - `EMAIL_SMTP_PORT` (defaults to 465)
 - Ntfy Notifications

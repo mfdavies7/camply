@@ -135,8 +135,8 @@ dmypy.json
 # NodeJS
 node_modules/
 
-# Camply Data Files
-camply/providers/usedirect/*/*.json
+# SpotSnagger Data Files
+spotsnagger/providers/usedirect/*/*.json
 
-# Camply Requirements Files
+# SpotSnagger Requirements Files
 requirements/*.bak

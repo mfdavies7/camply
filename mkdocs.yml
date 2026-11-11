@@ -1,9 +1,9 @@
 # schema: $schema=https://squidfunk.github.io/mkdocs-material/schema.json
 
-site_name: camply
+site_name: spotsnagger
 theme:
-    favicon: _static/camply.png
-    logo: _static/camply.png
+    favicon: _static/spotsnagger.png
+    logo: _static/spotsnagger.png
     name: material
     features:
         - navigation.tracking
@@ -23,18 +23,18 @@ theme:
               icon: material/weather-night
               name: Switch to light mode
 repo_url: https://github.com/juftin/camply
-repo_name: camply
+repo_name: spotsnagger
 edit_uri: blob/main/docs/
 site_author: juftin
 remote_branch: gh-pages
 copyright: Copyright &copy; 2020 Justin Flannery
 extra_css: [extra.css]
 nav:
-    - camply: index.md
+    - spotsnagger: index.md
     - Installation: installation.md
     - Providers: providers.md
     - Usage: command_line_usage.md
-    - How To Run Camply: how_to_run.md
+    - How To Run SpotSnagger: how_to_run.md
     - Object Oriented Usage: python.md
     - Command Line Interface: cli.md
     - API Documentation: reference/

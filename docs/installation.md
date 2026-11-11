@@ -3,14 +3,14 @@
 ## Python
 
 ```commandline
-pipx install camply
+pipx install spotsnagger
 ```
 
 !!! note
 
-    If you're using camply on your command line - it's recommended that you use a tool
+    If you're using spotsnagger on your command line - it's recommended that you use a tool
     like [pipx](https://github.com/pypa/pipx) to easily manage the application in an isolated
-    virtual environment. However you can always **`pip install camply`** as well.
+    virtual environment. However you can always **`pip install spotsnagger`** as well.
 
 [PyPI Link](https://pypi.python.org/pypi/camply/)
 

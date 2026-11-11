@@ -39,116 +39,6 @@ wheels = [
 ]
 
 [[package]]
-name = "camply"
-version = "0.34.4"
-source = { editable = "." }
-dependencies = [
-    { name = "click" },
-    { name = "fake-useragent" },
-    { name = "pandas" },
-    { name = "pydantic" },
-    { name = "python-dotenv" },
-    { name = "pytz" },
-    { name = "pyyaml" },
-    { name = "ratelimit" },
-    { name = "requests" },
-    { name = "rich" },
-    { name = "rich-click" },
-    { name = "tenacity" },
-]
-
-[package.optional-dependencies]
-all = [
-    { name = "apprise" },
-    { name = "trogon" },
-    { name = "twilio" },
-]
-apprise = [
-    { name = "apprise" },
-]
-tui = [
-    { name = "trogon" },
-]
-twilio = [
-    { name = "twilio" },
-]
-
-[package.dev-dependencies]
-dev = [
-    { name = "freezegun" },
-    { name = "mypy" },
-    { name = "pytest" },
-    { name = "pytest-cov" },
-    { name = "pytest-mock" },
-    { name = "pytest-vcr" },
-    { name = "pytest-xdist" },
-    { name = "ruff" },
-]
-docs = [
-    { name = "markdown-callouts" },
-    { name = "markdown-exec" },
-    { name = "mkdocs" },
-    { name = "mkdocs-click" },
-    { name = "mkdocs-exclude-search" },
-    { name = "mkdocs-gen-files" },
-    { name = "mkdocs-literate-nav" },
-    { name = "mkdocs-material" },
-    { name = "mkdocs-section-index" },
-    { name = "mkdocstrings" },
-    { name = "mkdocstrings-python" },
-    { name = "pymdown-extensions" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "apprise", marker = "extra == 'all'", specifier = "~=1.3.0" },
-    { name = "apprise", marker = "extra == 'apprise'", specifier = "~=1.3.0" },
-    { name = "click", specifier = "~=8.1.3" },
-    { name = "fake-useragent", specifier = "~=1.4.0" },
-    { name = "pandas", specifier = ">=2,<3" },
-    { name = "pydantic", specifier = "~=1.10.22" },
-    { name = "python-dotenv", specifier = "~=1.0.0" },
-    { name = "pytz", specifier = "~=2023.2" },
-    { name = "pyyaml", specifier = "~=6.0" },
-    { name = "ratelimit", specifier = "~=2.2.1" },
-    { name = "requests", specifier = "~=2.31.0" },
-    { name = "rich", specifier = "~=13.3.2" },
-    { name = "rich-click", specifier = "~=1.6.1" },
-    { name = "tenacity", specifier = "~=8.2.2" },
-    { name = "trogon", marker = "extra == 'all'", specifier = "~=0.4.0" },
-    { name = "trogon", marker = "extra == 'tui'", specifier = "~=0.4.0" },
-    { name = "twilio", marker = "extra == 'all'", specifier = "~=7.17.0" },
-    { name = "twilio", marker = "extra == 'twilio'", specifier = "~=7.17.0" },
-]
-provides-extras = ["all", "apprise", "tui", "twilio"]
-
-[package.metadata.requires-dev]
-dev = [
-    { name = "freezegun", specifier = "~=1.5.5" },
-    { name = "mypy", specifier = ">=1.6.1" },
-    { name = "pytest", specifier = "~=7.3.1" },
-    { name = "pytest-cov", specifier = "~=4.0.0" },
-    { name = "pytest-mock", specifier = "~=3.10.0" },
-    { name = "pytest-vcr", specifier = "~=1.0.2" },
-    { name = "pytest-xdist", specifier = "~=3.2.1" },
-    { name = "ruff", specifier = "~=0.1.7" },
-]
-docs = [
-    { name = "markdown-callouts" },
-    { name = "markdown-exec" },
-    { name = "mkdocs" },
-    { name = "mkdocs-click" },
-    { name = "mkdocs-exclude-search" },
-    { name = "mkdocs-gen-files" },
-    { name = "mkdocs-literate-nav" },
-    { name = "mkdocs-material" },
-    { name = "mkdocs-section-index" },
-    { name = "mkdocstrings" },
-    { name = "mkdocstrings-python" },
-    { name = "pymdown-extensions" },
-]
-
-[[package]]
 name = "certifi"
 version = "2023.11.17"
 source = { registry = "https://pypi.org/simple" }
@@ -1678,6 +1568,116 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/71/39/171f1c67cd00715f190ba0b100d606d440a28c93c7714febeca8b79af85e/six-1.16.0.tar.gz", hash = "sha256:1e61c37477a1626458e36f7b1d82aa5c9b094fa4802892072e49de9c60c4c926", size = 34041, upload-time = "2021-05-05T14:18:18.379Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/d9/5a/e7c31adbe875f2abbb91bd84cf2dc52d792b5a01506781dbcf25c91daf11/six-1.16.0-py2.py3-none-any.whl", hash = "sha256:8abb2f1d86890a2dfb989f9a77cfcfd3e47c2a354b01111771326f8aa26e0254", size = 11053, upload-time = "2021-05-05T14:18:17.237Z" },
+]
+
+[[package]]
+name = "spotsnagger"
+version = "0.34.4"
+source = { editable = "." }
+dependencies = [
+    { name = "click" },
+    { name = "fake-useragent" },
+    { name = "pandas" },
+    { name = "pydantic" },
+    { name = "python-dotenv" },
+    { name = "pytz" },
+    { name = "pyyaml" },
+    { name = "ratelimit" },
+    { name = "requests" },
+    { name = "rich" },
+    { name = "rich-click" },
+    { name = "tenacity" },
+]
+
+[package.optional-dependencies]
+all = [
+    { name = "apprise" },
+    { name = "trogon" },
+    { name = "twilio" },
+]
+apprise = [
+    { name = "apprise" },
+]
+tui = [
+    { name = "trogon" },
+]
+twilio = [
+    { name = "twilio" },
+]
+
+[package.dev-dependencies]
+dev = [
+    { name = "freezegun" },
+    { name = "mypy" },
+    { name = "pytest" },
+    { name = "pytest-cov" },
+    { name = "pytest-mock" },
+    { name = "pytest-vcr" },
+    { name = "pytest-xdist" },
+    { name = "ruff" },
+]
+docs = [
+    { name = "markdown-callouts" },
+    { name = "markdown-exec" },
+    { name = "mkdocs" },
+    { name = "mkdocs-click" },
+    { name = "mkdocs-exclude-search" },
+    { name = "mkdocs-gen-files" },
+    { name = "mkdocs-literate-nav" },
+    { name = "mkdocs-material" },
+    { name = "mkdocs-section-index" },
+    { name = "mkdocstrings" },
+    { name = "mkdocstrings-python" },
+    { name = "pymdown-extensions" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "apprise", marker = "extra == 'all'", specifier = "~=1.3.0" },
+    { name = "apprise", marker = "extra == 'apprise'", specifier = "~=1.3.0" },
+    { name = "click", specifier = "~=8.1.3" },
+    { name = "fake-useragent", specifier = "~=1.4.0" },
+    { name = "pandas", specifier = ">=2,<3" },
+    { name = "pydantic", specifier = "~=1.10.22" },
+    { name = "python-dotenv", specifier = "~=1.0.0" },
+    { name = "pytz", specifier = "~=2023.2" },
+    { name = "pyyaml", specifier = "~=6.0" },
+    { name = "ratelimit", specifier = "~=2.2.1" },
+    { name = "requests", specifier = "~=2.31.0" },
+    { name = "rich", specifier = "~=13.3.2" },
+    { name = "rich-click", specifier = "~=1.6.1" },
+    { name = "tenacity", specifier = "~=8.2.2" },
+    { name = "trogon", marker = "extra == 'all'", specifier = "~=0.4.0" },
+    { name = "trogon", marker = "extra == 'tui'", specifier = "~=0.4.0" },
+    { name = "twilio", marker = "extra == 'all'", specifier = "~=7.17.0" },
+    { name = "twilio", marker = "extra == 'twilio'", specifier = "~=7.17.0" },
+]
+provides-extras = ["all", "apprise", "tui", "twilio"]
+
+[package.metadata.requires-dev]
+dev = [
+    { name = "freezegun", specifier = "~=1.5.5" },
+    { name = "mypy", specifier = ">=1.6.1" },
+    { name = "pytest", specifier = "~=7.3.1" },
+    { name = "pytest-cov", specifier = "~=4.0.0" },
+    { name = "pytest-mock", specifier = "~=3.10.0" },
+    { name = "pytest-vcr", specifier = "~=1.0.2" },
+    { name = "pytest-xdist", specifier = "~=3.2.1" },
+    { name = "ruff", specifier = "~=0.1.7" },
+]
+docs = [
+    { name = "markdown-callouts" },
+    { name = "markdown-exec" },
+    { name = "mkdocs" },
+    { name = "mkdocs-click" },
+    { name = "mkdocs-exclude-search" },
+    { name = "mkdocs-gen-files" },
+    { name = "mkdocs-literate-nav" },
+    { name = "mkdocs-material" },
+    { name = "mkdocs-section-index" },
+    { name = "mkdocstrings" },
+    { name = "mkdocstrings-python" },
+    { name = "pymdown-extensions" },
 ]
 
 [[package]]

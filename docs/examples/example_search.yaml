@@ -15,4 +15,4 @@ search_forever: true # FALSE BY DEFAULT
 search_once: false # FALSE BY DEFAULT
 notify_first_try: false # FALSE BY DEFAULT
 offline_search: false # FALSE BY DEFAULT
-offline_search_path: camply_campsites.json # Defaults to `camply_campsites.json`
+offline_search_path: spotsnagger_campsites.json # Defaults to `spotsnagger_campsites.json`

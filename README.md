@@ -1,15 +1,15 @@
 <div align="center">
 <a href="https://github.com/juftin/camply">
   <img src="https://raw.githubusercontent.com/juftin/camply/main/docs/_static/camply.svg"
-    width="400" height="400" alt="camply">
+    width="400" height="400" alt="spotsnagger">
 </a>
 </div>
 
-**`camply`**, the campsite finder, is a tool to help you book a campsite online. Finding
-reservations at sold out campgrounds can be tough. That's where camply comes in. It searches
+**`spotsnagger`**, the campsite finder, is a tool to help you book a campsite online. Finding
+reservations at sold out campgrounds can be tough. That's where spotsnagger comes in. It searches
 Canadian national, provincial and regional parks via the [GoingToCamp](https://goingtocamp.com)
 booking platform. It continuously checks for cancellations and
-availabilities to pop up - once a campsite becomes available, camply sends you a notification
+availabilities to pop up - once a campsite becomes available, spotsnagger sends you a notification
 to book your spot!
 
 ---
@@ -33,10 +33,10 @@ to book your spot!
 
 ## Installing
 
-Install camply via `pip` or [pipx](https://github.com/pypa/pipx):
+Install spotsnagger via `pip` or [pipx](https://github.com/pypa/pipx):
 
 ```commandline
-pipx install camply
+pipx install spotsnagger
 ```
 
 ## Usage
@@ -44,29 +44,29 @@ pipx install camply
 List the supported recreation areas (recreation areas contain campgrounds):
 
 ```commandline
-camply recreation-areas
+spotsnagger recreation-areas
 ```
 
 Search for campgrounds inside a recreation area (campgrounds contain campsites).
 Recreation Area #14 is Parks Canada:
 
 ```commandline
-camply campgrounds --rec-area 14 --search "Two Jack"
+spotsnagger campgrounds --rec-area 14 --search "Two Jack"
 ```
 
 Search for available campsites, get a notification whenever one becomes
 available, and continue searching after the first one is found. The below command
-is using `silent` notifications as an example but camply also supports `Email`,
+is using `silent` notifications as an example but spotsnagger also supports `Email`,
 `Slack`, `Twilio` (SMS), `Pushover`, `Pushbullet`, `Ntfy`, `Apprise`, `Telegram`,
 and `Webhook`.
 
 ```commandline
-camply campsites     --rec-area 14     --campground -2147483643     --start-date 2023-07-10     --end-date 2023-07-18     --notifications silent     --search-forever
+spotsnagger campsites     --rec-area 14     --campground -2147483643     --start-date 2023-07-10     --end-date 2023-07-18     --notifications silent     --search-forever
 ```
 
 ## Providers
 
-camply searches a single provider, **`GoingToCamp`** ([goingtocamp.com](https://goingtocamp.com)),
+spotsnagger searches a single provider, **`GoingToCamp`** ([goingtocamp.com](https://goingtocamp.com)),
 which is the default. It covers the following Canadian recreation areas:
 
 - Parks Canada - Canada National Parks - [reservation.pc.gc.ca](https://reservation.pc.gc.ca/)
@@ -86,21 +86,21 @@ Visit the [Providers](https://juftin.com/camply/providers/) section in the docs 
 
 ## Documentation
 
-Head over to the [camply documentation](https://juftin.com/camply/) to see what you can do!
+Head over to the [spotsnagger documentation](https://juftin.com/camply/) to see what you can do!
 
 ```console
-❯ camply --help
+❯ spotsnagger --help
 
- Usage: camply [OPTIONS] COMMAND [ARGS]...
+ Usage: spotsnagger [OPTIONS] COMMAND [ARGS]...
 
- Welcome to camply, the campsite finder.
- Finding reservations at sold out campgrounds can be tough. That's where camply comes in. It searches the
+ Welcome to spotsnagger, the campsite finder.
+ Finding reservations at sold out campgrounds can be tough. That's where spotsnagger comes in. It searches the
  APIs of booking services like GoingToCamp (which serves Parks Canada and provincial parks) to
  continuously check for cancellations and availabilities to pop up. Once a campsite becomes available,
- camply sends you a notification to book your spot!
+ spotsnagger sends you a notification to book your spot!
 
 
- visit the camply documentation at https://juftin.com/camply
+ visit the spotsnagger documentation at https://juftin.com/camply
 
 ╭─ Options ──────────────────────────────────────────────────────────────────────────────────────────────╮
 │                                                                                                        │
@@ -114,10 +114,10 @@ Head over to the [camply documentation](https://juftin.com/camply/) to see what 
 │                                                                                                        │
 │  campgrounds              Search for Campgrounds (inside of Recreation Areas) and list them            │
 │  campsites                Find Available Campsites with Custom Search Criteria                         │
-│  configure                Set up camply configuration file with an interactive console                 │
+│  configure                Set up spotsnagger configuration file with an interactive console                 │
 │  equipment-types          Get a list of supported equipment                                            │
 │  list-campsites           List campsite IDs for a given campground or recreation area                  │
-│  providers                List the different camply providers                                          │
+│  providers                List the different spotsnagger providers                                          │
 │  recreation-areas         Search for Recreation Areas and list them                                    │
 │  test-notifications       Test your notification provider setup                                        │
 │  tui                      Open Textual TUI.                                                            │
@@ -127,7 +127,7 @@ Head over to the [camply documentation](https://juftin.com/camply/) to see what 
 
 ## Contributing
 
-Camply doesn't support your favorite campsite booking provider yet? Consider
+SpotSnagger doesn't support your favorite campsite booking provider yet? Consider
 [contributing](https://juftin.com/camply/contributing/).
 
 ---

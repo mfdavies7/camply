@@ -1,6 +1,6 @@
 # Providers
 
-camply works with two providers, **`GoingToCamp`** and **`Aspira`**. A "provider" is an
+spotsnagger works with two providers, **`GoingToCamp`** and **`Aspira`**. A "provider" is an
 Online Booking Service that lists camping and recreation inventory. `GoingToCamp` is the
 default, so you only need to pass **`--provider Aspira`** for Aspira parks.
 
@@ -14,7 +14,7 @@ Parks Canada and several Canadian provincial and regional park systems.
 To get a listing of GoingToCamp recreation areas, and their IDs, run the following command:
 
 ```shell
-camply recreation-areas
+spotsnagger recreation-areas
 ```
 
 When using GoingToCamp you must restrict campground and campsite searches to a single
@@ -56,24 +56,24 @@ ReserveAmerica sites, a different system from GoingToCamp.
 | 3   | Saskatchewan Provincial Parks         | Saskatchewan         | [parks.saskatchewan.ca](https://parks.saskatchewan.ca)         |
 
 ```shell
-camply campgrounds --provider Aspira --rec-area 3
-camply campsites --provider Aspira --rec-area 3 --campground 290125     --start-date 2026-11-24 --end-date 2026-11-27
+spotsnagger campgrounds --provider Aspira --rec-area 3
+spotsnagger campsites --provider Aspira --rec-area 3 --campground 290125     --start-date 2026-11-24 --end-date 2026-11-27
 ```
 
 `--booking-category` picks what to search: `0` Camping (default), `1` Day Use or `2`
 Backcountry Camping permits, where the province offers it (PEI is camping only). Each
 category has its own campgrounds, so pass the same `--booking-category` to
-`camply campgrounds`:
+`spotsnagger campgrounds`:
 
 ```shell
-camply campgrounds --provider Aspira --rec-area 1 --booking-category 2
-camply campsites --provider Aspira --rec-area 1 --booking-category 2 --campground 331053 --start-date 2027-07-10 --end-date 2027-07-12
+spotsnagger campgrounds --provider Aspira --rec-area 1 --booking-category 2
+spotsnagger campsites --provider Aspira --rec-area 1 --booking-category 2 --campground 331053 --start-date 2027-07-10 --end-date 2027-07-12
 ```
 
 A backcountry campground matches only when a permit is available for every night of the
 stay.
 
-These sites sit behind a waiting-room queue; camply waits for it to redirect back to the
+These sites sit behind a waiting-room queue; spotsnagger waits for it to redirect back to the
 site. Because of the queue, Aspira parks can only be searched once: `--continuous` and
 `--search-forever` aren't supported, and notifications need `--search-once` (a YAML
 search needs `continuous: false` or `search_once: true`).

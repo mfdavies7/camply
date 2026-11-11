@@ -1,3 +1,3 @@
 """
-Test suite for the camply package
+Test suite for the spotsnagger package
 """

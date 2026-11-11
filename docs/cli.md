@@ -3,8 +3,8 @@
 ## Documentation
 
 ::: mkdocs-click
-    :module: camply.cli
-    :command: camply_command_line
-    :prog_name: camply
+    :module: spotsnagger.cli
+    :command: spotsnagger_command_line
+    :prog_name: spotsnagger
     :style: table
     :list_subcommands: True

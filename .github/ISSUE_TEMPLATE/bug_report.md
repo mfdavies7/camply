@@ -1,6 +1,6 @@
 ---
 name: Bug Report
-about: Create a report to help improve camply
+about: Create a report to help improve spotsnagger
 title: ""
 labels: "bug"
 assignees: "juftin"
@@ -10,13 +10,13 @@ assignees: "juftin"
 
 < A clear and concise description of what the bug is. >
 
-**Original Camply Command (with `--debug`)**
+**Original SpotSnagger Command (with `--debug`)**
 
-<!-- Replace the below command with your personal camply command, make sure to include the `--debug` -->
+<!-- Replace the below command with your personal spotsnagger command, make sure to include the `--debug` -->
 <!-- if the output is too long you can attach a text file or omit the `--debug` if needed -->
 
 ```console
-camply --debug campsites \
+spotsnagger --debug campsites \
     --campground 232338 \
     --start-date 2023-09-09 \
     --end-date 2023-09-32 \

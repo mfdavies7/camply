@@ -7,8 +7,8 @@ from datetime import datetime
 import logging
 from typing import List
 
-from camply.containers import AvailableCampsite, SearchWindow
-from camply.search import SearchGoingToCamp
+from spotsnagger.containers import AvailableCampsite, SearchWindow
+from spotsnagger.search import SearchGoingToCamp
 
 logging.basicConfig(format="%(asctime)s [%(levelname)8s]: %(message)s",
                     level=logging.INFO)
@@ -35,8 +35,8 @@ to the commandline arguments.
 from datetime import datetime
 import logging
 
-from camply.containers import SearchWindow
-from camply.search import SearchGoingToCamp
+from spotsnagger.containers import SearchWindow
+from spotsnagger.search import SearchGoingToCamp
 
 logging.basicConfig(format="%(asctime)s [%(levelname)8s]: %(message)s",
                     level=logging.INFO)

@@ -6,8 +6,8 @@ import datetime
 
 import pytest
 
-from camply.containers import CampgroundFacility
-from camply.providers import GoingToCamp
+from spotsnagger.containers import CampgroundFacility
+from spotsnagger.providers import GoingToCamp
 
 BOOKING_CATEGORIES = [
     {

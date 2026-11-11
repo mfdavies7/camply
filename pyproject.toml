@@ -30,10 +30,10 @@ dependencies = [
   "rich-click~=1.6.1",
   "tenacity~=8.2.2"
 ]
-description = "camply, the campsite finder"
+description = "spotsnagger, the campsite finder"
 keywords = ["recdotgov", "outdoors", "camping", "reservations", "national-parks"]
 license = "MIT"
-name = "camply"
+name = "spotsnagger"
 readme = "README.md"
 requires-python = ">=3.9,<4"
 version = "0.34.4"
@@ -55,7 +55,7 @@ twilio = [
 ]
 
 [project.scripts]
-camply = "camply.cli:cli"
+spotsnagger = "spotsnagger.cli:cli"
 
 [project.urls]
 Changelog = "https://github.com/juftin/camply/releases"
@@ -94,7 +94,7 @@ docs = [
 ]
 
 [tool.coverage.paths]
-camply = ["camply", "*/camply/camply"]
+spotsnagger = ["spotsnagger", "*/spotsnagger/spotsnagger"]
 
 [tool.coverage.report]
 exclude_lines = [
@@ -105,9 +105,9 @@ exclude_lines = [
 
 [tool.coverage.run]
 branch = true
-omit = ["camply/_version.py"]
+omit = ["spotsnagger/_version.py"]
 parallel = true
-source_pkgs = ["camply"]
+source_pkgs = ["spotsnagger"]
 
 [tool.mypy]
 check_untyped_defs = true
@@ -128,7 +128,7 @@ module = ["requests", "requests.*"]
 addopts = [
   "-n",
   "auto",
-  "--cov=camply",
+  "--cov=spotsnagger",
   "--cov-config=pyproject.toml",
   "--cov-report=term-missing",
   "--cov-report=xml:coverage.xml",
@@ -140,7 +140,7 @@ filterwarnings = [
   "ignore::DeprecationWarning:pkg_resources",
   "ignore:The --rsyncdir command line argument and rsyncdirs config variable are deprecated.:DeprecationWarning",
   "ignore:datetime.datetime.utcfromtimestamp:DeprecationWarning:dateutil.tz.tz",
-  # pandas 2.x internals on numpy>=2.4; not triggered by camply code
+  # pandas 2.x internals on numpy>=2.4; not triggered by spotsnagger code
   "ignore:The 'generic' unit for NumPy timedelta is deprecated:DeprecationWarning"
 ]
 
@@ -171,7 +171,7 @@ target-version = "py38"
 ban-relative-imports = "all"
 
 [tool.ruff.isort]
-known-first-party = ["camply"]
+known-first-party = ["spotsnagger"]
 
 [tool.ruff.per-file-ignores]
 # Tests can use magic values, assertions, and relative imports

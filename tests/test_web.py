@@ -4,8 +4,9 @@ Web UI request handling (no network)
 
 import json
 
-from camply.providers import Aspira
-from camply.web import handle_api
+from spotsnagger.containers import CampgroundFacility
+from spotsnagger.providers import Aspira, GoingToCamp
+from spotsnagger.web import handle_api
 
 
 def _search(**body):
@@ -15,11 +16,17 @@ def _search(**body):
 def test_parks_listed() -> None:
     status, parks = handle_api("GET", "/api/parks", "", b"")
     assert status == 200
-    assert {"id": 1, "name": "Long Point Region", "location": "Ontario, CA"} in parks
+    assert {
+        "id": 1,
+        "name": "Long Point Region",
+        "location": "Ontario, CA",
+        "url": "https://longpoint.goingtocamp.com/",
+    } in parks
     assert {
         "id": "aspira-3",
         "name": "Saskatchewan Provincial Parks",
         "location": "Saskatchewan, CA",
+        "url": "https://parks.saskatchewan.ca/",
     } in parks
 
 
@@ -32,7 +39,38 @@ def test_aspira_booking_categories(monkeypatch) -> None:
     status, categories = handle_api(
         "GET", "/api/booking_categories", "rec_area=aspira-1", b""
     )
-    assert status == 200 and categories == [{"id": 2, "name": "Backcountry Camping"}]
+    assert status == 200 and categories == [
+        {
+            "id": 2,
+            "name": "Backcountry Camping",
+            "url": "https://shop.albertaparks.ca/unifSearch.do?interest=permit"
+            "&contractCode=ABPP",
+        }
+    ]
+
+
+def test_campground_links(monkeypatch) -> None:
+    facility = CampgroundFacility(
+        facility_name="Backus",
+        recreation_area="Long Point Region",
+        facility_id=-7,
+        recreation_area_id=1,
+        map_id=-9,
+    )
+    monkeypatch.setattr(GoingToCamp, "find_campgrounds", lambda self, **kw: [facility])
+    monkeypatch.setattr(Aspira, "find_campgrounds", lambda self, **kw: [facility])
+    _, [gtc] = handle_api("GET", "/api/campgrounds", "rec_area=1", b"")
+    assert gtc["url"] == (
+        "https://longpoint.goingtocamp.com/create-booking/results"
+        "?bookingCategoryId=0&mapId=-9&resourceLocationId=-7"
+    )
+    _, [asp] = handle_api(
+        "GET", "/api/campgrounds", "rec_area=aspira-1&booking_category=2", b""
+    )
+    assert asp["url"] == (
+        "https://shop.albertaparks.ca/wildernessAreaDetails.do?page=detail"
+        "&contractCode=ABPP&parkId=-7"
+    )
 
 
 def test_search_validation() -> None:

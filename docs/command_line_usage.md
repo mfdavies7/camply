@@ -1,28 +1,28 @@
 # Command Line Usage
 
-When installed, `camply`'s command line utility can be invoked with the command, `camply`. The CLI
+When installed, `spotsnagger`'s command line utility can be invoked with the command, `spotsnagger`. The CLI
 tool accepts the sub-commands `campsites`, `recreation-areas`, `campgrounds`, `providers`,
 `equipment-types`, `configure`, `test-notifications`, and `tui`.
 
 !!! important
 
-    The multi-line commands in this documentation correspond to running **`camply`** on a
+    The multi-line commands in this documentation correspond to running **`spotsnagger`** on a
     MacOS or Linux Shell. If you are a Windows user take note that multi-line commands
     on Windows Shells use the **`^`** character instead of **`\`** to escape new lines.
 
 ```console
-❯ camply --help
+❯ spotsnagger --help
 
- Usage: camply [OPTIONS] COMMAND [ARGS]...
+ Usage: spotsnagger [OPTIONS] COMMAND [ARGS]...
 
- Welcome to camply, the campsite finder.
- Finding reservations at sold out campgrounds can be tough. That's where camply comes in. It searches the
+ Welcome to spotsnagger, the campsite finder.
+ Finding reservations at sold out campgrounds can be tough. That's where spotsnagger comes in. It searches the
  APIs of booking services like GoingToCamp (which serves Parks Canada and provincial parks) to
  continuously check for cancellations and availabilities to pop up. Once a campsite becomes available,
- camply sends you a notification to book your spot!
+ spotsnagger sends you a notification to book your spot!
 
 
- visit the camply documentation at https://juftin.com/camply
+ visit the spotsnagger documentation at https://juftin.com/camply
 
 ╭─ Options ──────────────────────────────────────────────────────────────────────────────────────────────╮
 │                                                                                                        │
@@ -36,9 +36,9 @@ tool accepts the sub-commands `campsites`, `recreation-areas`, `campgrounds`, `p
 │                                                                                                        │
 │  campgrounds              Search for Campgrounds (inside of Recreation Areas) and list them            │
 │  campsites                Find Available Campsites with Custom Search Criteria                         │
-│  configure                Set up camply configuration file with an interactive console                 │
+│  configure                Set up spotsnagger configuration file with an interactive console                 │
 │  equipment-types          Get a list of supported equipment                                            │
-│  providers                List the different camply providers                                          │
+│  providers                List the different spotsnagger providers                                          │
 │  recreation-areas         Search for Recreation Areas and list them                                    │
 │  test-notifications       Test your notification provider setup                                        │
 │  tui                      Open Textual TUI.                                                            │
@@ -52,14 +52,14 @@ tool accepts the sub-commands `campsites`, `recreation-areas`, `campgrounds`, `p
 areas contain campgrounds):
 
 ```commandline
-camply recreation-areas
+spotsnagger recreation-areas
 ```
 
 [Search for campgrounds inside a recreation area](#look-for-specific-campgrounds-within-a-recreation-area)
 (campgrounds contain campsites). Recreation Area #14 is Parks Canada:
 
 ```commandline
-camply campgrounds --rec-area 14 --search "Two Jack"
+spotsnagger campgrounds --rec-area 14 --search "Two Jack"
 ```
 
 [Search for available campsites](#searching-for-a-campsite),
@@ -67,7 +67,7 @@ camply campgrounds --rec-area 14 --search "Two Jack"
 [continue searching after the first one is found](#continue-looking-after-the-first-match-is-found):
 
 ```commandline
-camply campsites \
+spotsnagger campsites \
     --rec-area 14 \
     --campground -2147483643 \
     --start-date 2023-07-10 \
@@ -78,21 +78,21 @@ camply campsites \
 
 ## providers
 
-List the various [providers](providers.md) that camply works with.
+List the various [providers](providers.md) that spotsnagger works with.
 
 ```commandline
-camply providers
+spotsnagger providers
 ```
 
 !!! note
 
-    camply has a single provider, **`GoingToCamp`**, which is used by default.
+    spotsnagger has a single provider, **`GoingToCamp`**, which is used by default.
     It searches Canadian recreation areas, campgrounds, and campsites
     listed on https://goingtocamp.com
 
 ## campsites
 
-Search for a campsite within camply. Campsites are returned based on the search criteria provided.
+Search for a campsite within spotsnagger. Campsites are returned based on the search criteria provided.
 Campsites contain properties like booking date, site type (tent, RV, cabin, etc), capacity, price,
 and a link to make the booking. Required parameters include `--start-date`, `--end-date`,
 a single `--rec-area`, and at least one `--campground`. Constant searching functionality can be enabled with
@@ -168,17 +168,17 @@ a single `--rec-area`, and at least one `--campground`. Constant searching funct
 - `--offline-search-path`
     - Enables offline search. This is the name of the file to be saved/loaded. Campsites can be saved as
       a serialized pickle file or a JSON file, depending on the file extension. When not specified,
-      the filename will default to `camply_campsites.json`.
+      the filename will default to `spotsnagger_campsites.json`.
       [\*\*_example_](#saving-the-results-of-a-search)
 - `--search-once`
     - Enables continuous searching features - but doesn't actually search continuously. This option
-      is only useful when you want to run camply periodically in a CRON job fashion but still
+      is only useful when you want to run spotsnagger periodically in a CRON job fashion but still
       receive notifications - it's strongly recommended you enable offline searching as
       well to save results between searches.
-      [\*\*_example_](#run-camply-as-a-cron-job)
+      [\*\*_example_](#run-spotsnagger-as-a-cron-job)
 
 ```commandline
-camply campsites \
+spotsnagger campsites \
     --rec-area 14 \
     --campground -2147483643 \
     --start-date 2023-07-10 \
@@ -196,7 +196,7 @@ BC Parks that can contain one or many campgrounds.
     - Search for Recreation Areas by search string.
 
 ```commandline
-camply recreation-areas --search "Parks Canada"
+spotsnagger recreation-areas --search "Parks Canada"
 ```
 
 \*\*_see the [examples](#search-for-recreation-areas-by-query-string) for more information_
@@ -217,61 +217,61 @@ like fire towers or cabins that might only contain a single 'campsite' to book.
     - Add individual Campgrounds by ID.
 
 ```commandline
-camply campgrounds --rec-area 14 --search "Two Jack"
+spotsnagger campgrounds --rec-area 14 --search "Two Jack"
 ```
 
 \*\*_see the [examples](#look-for-specific-campgrounds-within-a-recreation-area) for more information_
 
 ## configure
 
-Set up `camply` configuration file with an interactive console
+Set up `spotsnagger` configuration file with an interactive console
 
-In order to send notifications through `camply` you must set up some authorization values. Whether
+In order to send notifications through `spotsnagger` you must set up some authorization values. Whether
 you need to set up [Pushover notifications](https://pushover.net)
 , [PushBullet](https://www.pushbullet.com/#settings/account), [Telegram](https://core.telegram.org/bots),
 or Email messages, everything can be done through the `configure` command. The end result is a file called
-[`.camply`](examples/example.camply) in your home folder. See
+[`.spotsnagger`](examples/example.spotsnagger) in your home folder. See
 the [Running in Docker](how_to_run.md#running-in-docker) section to see how you can use environment variables
 instead of a config file.
 
 ```commandline
-camply configure
+spotsnagger configure
 ```
 
 ## test-notifications
 
 Test your notification provider setup.
 
-If you want to send yourself a test notification via camply, the `test-notifiactions`
+If you want to send yourself a test notification via spotsnagger, the `test-notifiactions`
 command is for you. See the [Send a Push Notification](#send-a-push-notification)
 section for more details on how to set up the notification provider of your choice.
 
 ```commandline
-camply test-notifications --notifications email
+spotsnagger test-notifications --notifications email
 ```
 
 ## tui
 
-Camply has an optional TUI interface thanks to [textual](https://github.com/textualize/textual) and
+SpotSnagger has an optional TUI interface thanks to [textual](https://github.com/textualize/textual) and
 [trogon](https://github.com/Textualize/trogon). A TUI is a text-based user interface that allows you to
-interact with camply in a more visual way, it's a visual application that runs in your terminal.
+interact with spotsnagger in a more visual way, it's a visual application that runs in your terminal.
 The TUI config is a great way to set up your camp search with your mouse and keyboard, and then run
-camply like you normally would.
+spotsnagger like you normally would.
 
 !!! note
 
-    Camply's TUI command requires that the **`tui`** extra is installed. To install camply with
-    the TUI extra, run **`pipx install "camply[tui]"`**.
+    SpotSnagger's TUI command requires that the **`tui`** extra is installed. To install spotsnagger with
+    the TUI extra, run **`pipx install "spotsnagger[tui]"`**.
 
 ```commandline
-camply tui
+spotsnagger tui
 ```
 
-![camply TUI](_static/tui.png)
+![spotsnagger TUI](_static/tui.png)
 
 ## Examples
 
-Read through the examples below to get a better understanding of `camply`, its features, and the
+Read through the examples below to get a better understanding of `spotsnagger`, its features, and the
 functionality of the different arguments provided to the CLI.
 
 ### Finding Campground IDs
@@ -280,14 +280,14 @@ GoingToCamp campsite searches need a Recreation Area ID and at least one Campgro
 First, find your Recreation Area ID:
 
 ```commandline
-camply recreation-areas
+spotsnagger recreation-areas
 ```
 
 For this example we'll search Parks Canada, which corresponds to Recreation Area ID #14.
 Next, list the Campgrounds within the Recreation Area:
 
 ```commandline
-camply campgrounds --rec-area 14
+spotsnagger campgrounds --rec-area 14
 ```
 
 The above command lists all of the campgrounds within the Recreation Area. In the
@@ -297,13 +297,13 @@ corresponds to Campground ID #-2147483643 (GoingToCamp regularly uses negative I
 ### Searching for a Campsite
 
 The below search looks for campsites at Two Jack Lakeside between 2023-07-10 and 2023-07-17.
-The search will be performed once and any results will be logged to the console. camply
+The search will be performed once and any results will be logged to the console. spotsnagger
 searches for campsites inside of search windows in increments of one night. `--start-date`
 and `--end-date` define the bounds of the search window, you will be leaving the day after
 `--end-date`. Multiple Campgrounds can be searched by supplying `--campground` more than once.
 
 ```commandline
-camply campsites \
+spotsnagger campsites \
     --rec-area 14 \
     --campground -2147483643 \
     --start-date 2023-07-10 \
@@ -313,12 +313,12 @@ camply campsites \
 ### Searching for a Specific Campsite by ID
 
 Sometimes you have a favorite campsite inside your favorite campground. To search for just a
-specific campsite you can give its ID to `camply` with the `--campsite` argument, alongside
+specific campsite you can give its ID to `spotsnagger` with the `--campsite` argument, alongside
 its `--rec-area` and `--campground`. Campsite IDs are shown in the results of a regular
 campsite search. You can provide the `--campsite` argument once or multiple times.
 
 ```commandline
-camply campsites \
+spotsnagger campsites \
     --rec-area 14 \
     --campground -2147483643 \
     --campsite <CAMPSITE_ID> \
@@ -341,7 +341,7 @@ once matches are found. Alternate notification methods are listed in the
     **`--polling-interval`**, **`--notify-first-try`**.
 
 ```commandline
-camply campsites \
+spotsnagger campsites \
     --rec-area 14 \
     --campground -2147483643 \
     --start-date 2023-07-12 \
@@ -353,16 +353,16 @@ camply campsites \
 
 !!! warning
 
-    When `camply` is told to running continuously with non-silent notifications set up
+    When `spotsnagger` is told to running continuously with non-silent notifications set up
     and it finds more than 5 matching campsites on the first try, it will only send notifications for
     the first 5 campsites. This is to prevent thousands of campsites flooding your notifications. It's
-    always encouraged to perform an initial online search before setting up a `camply` search. To bypass
+    always encouraged to perform an initial online search before setting up a `spotsnagger` search. To bypass
     this behavior and send all notifications, pass the `--notify-first-try` argument.
 
 ### Searching Across Multiple Time Windows
 
 There might be an occasion where you're looking to search for a campsite across
-multiple date ranges, i.e. any Monday in July. `camply` supports this quite nicely by
+multiple date ranges, i.e. any Monday in July. `spotsnagger` supports this quite nicely by
 passing multiple `--start-date` and `--end-date` options.
 
 !!! note
@@ -373,7 +373,7 @@ passing multiple `--start-date` and `--end-date` options.
     and so forth.
 
 ```commandline
-camply campsites \
+spotsnagger campsites \
     --rec-area 14 \
     --campground -2147483643 \
     --start-date 2023-07-12 \
@@ -387,17 +387,17 @@ camply campsites \
 ### Continue Looking After The First Match Is Found
 
 Sometimes you want to search for all possible matches up until your arrival date. No problem. Add
-the `--search-forever` and `camply` won't stop sending notifications after the first match is found.
+the `--search-forever` and `spotsnagger` won't stop sending notifications after the first match is found.
 
 !!! note
 
-    `camply` will save and store all previous notifications when
+    `spotsnagger` will save and store all previous notifications when
     **`--search-forever`** is enabled, so it won't notify you about the exact same
     campsite availability twice. This can be problematic when certain campsites become
     available more than once.
 
 ```commandline
-camply campsites \
+spotsnagger campsites \
     --rec-area 14 \
     --campground -2147483643 \
     --start-date 2023-07-01 \
@@ -408,7 +408,7 @@ camply campsites \
 
 ### Send a Push Notification
 
-camply supports notifications via a number of services:
+spotsnagger supports notifications via a number of services:
 
 - [Pushover](https://pushover.net)
 - Email
@@ -421,7 +421,7 @@ camply supports notifications via a number of services:
 - Silent
 
 ```commandline
-camply campsites \
+spotsnagger campsites \
     --rec-area 14 \
     --campground -2147483643 \
     --start-date 2023-09-10 \
@@ -430,14 +430,14 @@ camply campsites \
 ```
 
 Like all providers, `Pushover` requires that you share credentials/authentication - for `Pushover` this involves
-sharing your "Pushover User Key" with camply through a [configuration file](examples/example.camply)
-(via the **`camply configure`** command) or though environment variables (`PUSHOVER_PUSH_USER`). See the
+sharing your "Pushover User Key" with spotsnagger through a [configuration file](examples/example.spotsnagger)
+(via the **`spotsnagger configure`** command) or though environment variables (`PUSHOVER_PUSH_USER`). See the
 [Environment Variables](how_to_run.md#environment-variables) section for a list of relevant environment variables
 per notification provider.
 
 !!! info
 
-    When searching continuously `camply` uses the **`silent`** notification provider
+    When searching continuously `spotsnagger` uses the **`silent`** notification provider
     unless you expictly specify another notification provider to use. The **`silent`** notification
     provider simply prints logs to your console when matching campsites are found.
 
@@ -449,27 +449,27 @@ per notification provider.
 
 !!! note
 
-    Camply provides a courtesy Pushover API token for you to use, however it's
+    SpotSnagger provides a courtesy Pushover API token for you to use, however it's
     highly reccomended that you create and use your
     [own API token](https://pushover.net/apps/build). This is done via the
     `PUSHOVER_PUSH_TOKEN` environment variable. In the past, some users have exhausted the
-    courtesy token's monthly limit with faulty camply configurations.
+    courtesy token's monthly limit with faulty spotsnagger configurations.
 
 ### Send a Text Message
 
-If you want to sign up for a [Twilio](https://www.twilio.com/try-twilio) account, camply also supports
-sending text messages via SMS. You can set up your Twilio configuration via `camply configure`. You will need
+If you want to sign up for a [Twilio](https://www.twilio.com/try-twilio) account, spotsnagger also supports
+sending text messages via SMS. You can set up your Twilio configuration via `spotsnagger configure`. You will need
 to set the following config values for Twilio: `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`,
 `TWILIO_SOURCE_NUMBER`, `TWILIO_DEST_NUMBERS`.
 
 Sending text messages via Twilio also requires the `twilio` extras:
 
 ```
-pip install camply[twilio]
+pip install spotsnagger[twilio]
 ```
 
 ```commandline
-camply campsites \
+spotsnagger campsites \
     --rec-area 14 \
     --campground -2147483643 \
     --start-date 2023-09-10 \
@@ -479,12 +479,12 @@ camply campsites \
 
 ### Send a Notification to Different Services
 
-camply supports notifications from different providers. To send notifications to multiple providers
+spotsnagger supports notifications from different providers. To send notifications to multiple providers
 you can pass the --notifications parameter multiple times. YAML config entries also
 accept an array as well.
 
 ```commandline
-camply campsites \
+spotsnagger campsites \
     --rec-area 14 \
     --campground -2147483643 \
     --start-date 2023-09-10 \
@@ -503,7 +503,7 @@ documentation to learn how to format a URL to fit your needs.
 Using Apprise notifications requires the `apprise` extras:
 
 ```
-pip install camply[apprise]
+pip install spotsnagger[apprise]
 ```
 
 ### Searching for Specific Weekdays
@@ -516,7 +516,7 @@ are available on a Tuesday or Wednesday night.
     You can use the day's full spelling or an abbreviation - and neither is case sensitive.
 
 ```commandline
-camply campsites \
+spotsnagger campsites \
     --rec-area 14 \
     --campground -2147483643 \
     --start-date 2023-05-01 \
@@ -532,7 +532,7 @@ on a Friday or Saturday night (`--weekends`). It also uses the `--polling-interv
 checks every 5 minutes instead of the default 10 minutes.
 
 ```commandline
-camply campsites \
+spotsnagger campsites \
     --rec-area 14 \
     --campground -2147483643 \
     --start-date 2023-05-01 \
@@ -550,7 +550,7 @@ camply campsites \
 ### Look for Consecutive Nights at the Same Campsite
 
 A lot of times you need to search for consecutive nights at the same campsite. By default, any and
-all campsites with a single nights booking are returned by camply. To search for campsites with
+all campsites with a single nights booking are returned by spotsnagger. To search for campsites with
 consecutive night stays, pass the `--nights` argument.
 
 !!! note
@@ -560,7 +560,7 @@ consecutive night stays, pass the `--nights` argument.
     more than this your **`--nights`** parameter will be overwritten to 2.
 
 ```commandline
-camply campsites \
+spotsnagger campsites \
     --rec-area 14 \
     --campground -2147483643 \
     --start-date 2023-05-01 \
@@ -574,14 +574,14 @@ GoingToCamp allows you to search for campsites using equipment filters. In order
 corresponding equipment IDs, use the `equipment-types` command and pass in the Recreation Area ID:
 
 ```commandline
-camply equipment-types --rec-area 1
+spotsnagger equipment-types --rec-area 1
 ```
 
 The previous command lists all of the Equipment IDs for Recreation Area #1 (Long Point Region),
 such as `Trailer up to 25ft` and `Trailer up to 40ft`. Next, use an Equipment ID in your search:
 
 ```commandline
-camply campsites \
+spotsnagger campsites \
   --rec-area 1 \
   --campground -2147483643 \
   --start-date 2023-09-01 \
@@ -592,14 +592,14 @@ camply campsites \
 ### Using a YAML Configuration file to search for campsites
 
 Sometimes, using a YAML configuration file is easier to manage all of your search options. See the
-below [YAML example file](examples/example_search.yaml) and corresponding camply command:
+below [YAML example file](examples/example_search.yaml) and corresponding spotsnagger command:
 
 ```yaml
 --8<-- "docs/examples/example_search.yaml"
 ```
 
 ```commandline
-camply campsites --yaml-config example_search.yaml
+spotsnagger campsites --yaml-config example_search.yaml
 ```
 
 !!! note
@@ -611,16 +611,16 @@ camply campsites --yaml-config example_search.yaml
 
 In some cases, you might want to save all the campsites found during one
 search and load them into a new search, so you don't receive duplicate notifications.
-This can be achieved by passing the `--offline-search` flag. By default, camply will save
-the results in a file called `camply_campsites.json`.
+This can be achieved by passing the `--offline-search` flag. By default, spotsnagger will save
+the results in a file called `spotsnagger_campsites.json`.
 
 Alternatively, you can also path the `--offline-search-path` flag to specify a certain file
 path to save the results as. When a file path with a `.json` extension is passed
-camply will export the results as a JSON file. When the `.pkl` or `.pickle` extension is
-used, camply will use a serialized Pickle file.
+spotsnagger will export the results as a JSON file. When the `.pkl` or `.pickle` extension is
+used, spotsnagger will use a serialized Pickle file.
 
 ```commandline
-camply \
+spotsnagger \
   campsites \
   --rec-area 14 \
   --campground -2147483643 \
@@ -631,7 +631,7 @@ camply \
 ```
 
 ```commandline
-camply \
+spotsnagger \
   campsites \
   --rec-area 14 \
   --campground -2147483643 \
@@ -647,7 +647,7 @@ Just need to find what your Recreation Area ID number is? This simple command al
 search and list recreation areas. It accepts a `--search` argument.
 
 ```commandline
-camply recreation-areas --search "BC Parks"
+spotsnagger recreation-areas --search "BC Parks"
 ```
 
 ### Look for Specific Campgrounds Within a Recreation Area
@@ -656,22 +656,22 @@ Need to get even more specific and search for a particular campground? This sear
 attached to a recreation area id `--rec-area`. It also accepts a `--search` argument.
 
 ```commandline
-camply campgrounds --rec-area 14 --search "Banff"
+spotsnagger campgrounds --rec-area 14 --search "Banff"
 ```
 
-### Run camply as a CRON Job
+### Run spotsnagger as a CRON Job
 
-In some instances you don't want to run camply as a continuous, blocking Python
-process. Instead you might want to run camply as a CRON job that checks for a campsite
+In some instances you don't want to run spotsnagger as a continuous, blocking Python
+process. Instead you might want to run spotsnagger as a CRON job that checks for a campsite
 every 30 minutes (**`*/30 * * * *`**). In this case you would use the `--search-once` option
 which enables continuous searching functionality (like sending notifications) without
 actually searching continuously.
 
-Make sure to save your search results offline if running camply as a CRON job, this allows
-camply to save any campsites it finds between searches so that it only sends you a notification once:
+Make sure to save your search results offline if running spotsnagger as a CRON job, this allows
+spotsnagger to save any campsites it finds between searches so that it only sends you a notification once:
 
 ```commandline
-camply campsites \
+spotsnagger campsites \
     --rec-area 14 \
     --campground -2147483643 \
     --start-date 2023-07-10 \
@@ -683,8 +683,8 @@ camply campsites \
 
 ### Send a webhook notification
 
-Camply supports sending notifications to a webhook URL.
-This can be useful if you want to integrate camply with
+SpotSnagger supports sending notifications to a webhook URL.
+This can be useful if you want to integrate spotsnagger with
 services that accept webhooks, like [IFTTT](https://ifttt.com/).
 
 Webhook notifications require the `WEBHOOK_URL` environment variable /
@@ -701,7 +701,7 @@ Unless explicitly set otherwise, `WEBHOOK_HEADERS` will have
 `Content-Type: application/json` set.
 
 ```commandline
-camply campsites \
+spotsnagger campsites \
     --rec-area 14 \
     --campground -2147483643 \
     --start-date 2023-09-10 \

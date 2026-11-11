@@ -11,8 +11,8 @@ import pytest
 from click.testing import CliRunner, Result
 from freezegun import freeze_time
 
-from camply import AvailableCampsite
-from camply.cli import camply_command_line
+from spotsnagger import AvailableCampsite
+from spotsnagger.cli import spotsnagger_command_line
 
 logger = logging.getLogger(__name__)
 [
@@ -31,7 +31,7 @@ def freeze_current_time():
     """
     Freeze the Current Time to April 28, 2023 at Noon
 
-    Since camply saves the responses of the API calls, we need to freeze the time
+    Since spotsnagger saves the responses of the API calls, we need to freeze the time
     to ensure the responses are the same across all tests.
     """
     year = 2023
@@ -41,14 +41,14 @@ def freeze_current_time():
         yield
 
 
-class CamplyRunner(CliRunner):
+class SpotSnaggerRunner(CliRunner):
     """
-    Custom CLI Runner for Camply
+    Custom CLI Runner for SpotSnagger
     """
 
-    def run_camply_command(self, command: str) -> Result:
+    def run_spotsnagger_command(self, command: str) -> Result:
         """
-        Run a Camply Command and Return the Result
+        Run a SpotSnagger Command and Return the Result
 
         Parameters
         ----------
@@ -58,15 +58,15 @@ class CamplyRunner(CliRunner):
         -------
         Result
         """
-        parsed_command = self.parse_camply_command(command=command)
-        logger.debug("Camply CLI: %s", parsed_command)
-        result = self.invoke(cli=camply_command_line, args=parsed_command)
+        parsed_command = self.parse_spotsnagger_command(command=command)
+        logger.debug("SpotSnagger CLI: %s", parsed_command)
+        result = self.invoke(cli=spotsnagger_command_line, args=parsed_command)
         return result
 
     @classmethod
-    def parse_camply_command(cls, command: str) -> str:
+    def parse_spotsnagger_command(cls, command: str) -> str:
         """
-        Parse a Camply CLI Command to a Parseable Str
+        Parse a SpotSnagger CLI Command to a Parseable Str
 
         Parameters
         ----------
@@ -77,17 +77,23 @@ class CamplyRunner(CliRunner):
         str
         """
         command_parsed = dedent(command).strip()
-        for r in (("\\", ""), ("\n", ""), ("\t", " "), ("  ", " "), ("camply ", "")):
+        for r in (
+            ("\\", ""),
+            ("\n", ""),
+            ("\t", " "),
+            ("  ", " "),
+            ("spotsnagger ", ""),
+        ):
             command_parsed = command_parsed.replace(*r)
         return command_parsed
 
 
 @pytest.fixture
-def cli_runner() -> CamplyRunner:
+def cli_runner() -> SpotSnaggerRunner:
     """
     Fixture for invoking command-line interfaces.
     """
-    return CamplyRunner()
+    return SpotSnaggerRunner()
 
 
 def cli_status_checker(result: Result, exit_code_zero: bool = True) -> None:
