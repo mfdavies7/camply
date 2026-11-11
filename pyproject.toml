@@ -134,7 +134,9 @@ filterwarnings = [
   "error",
   "ignore::DeprecationWarning:pkg_resources",
   "ignore:The --rsyncdir command line argument and rsyncdirs config variable are deprecated.:DeprecationWarning",
-  "ignore:datetime.datetime.utcfromtimestamp:DeprecationWarning:dateutil.tz.tz"
+  "ignore:datetime.datetime.utcfromtimestamp:DeprecationWarning:dateutil.tz.tz",
+  # pandas 2.x internals on numpy>=2.4; not triggered by camply code
+  "ignore:The 'generic' unit for NumPy timedelta is deprecated:DeprecationWarning"
 ]
 
 [tool.ruff]

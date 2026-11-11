@@ -15,6 +15,18 @@ def test_parks_listed() -> None:
     status, parks = handle_api("GET", "/api/parks", "", b"")
     assert status == 200
     assert {"id": 1, "name": "Long Point Region", "location": "Ontario, CA"} in parks
+    assert {
+        "id": "aspira-3",
+        "name": "Saskatchewan Provincial Parks",
+        "location": "Saskatchewan, CA",
+    } in parks
+
+
+def test_aspira_booking_categories() -> None:
+    status, categories = handle_api(
+        "GET", "/api/booking_categories", "rec_area=aspira-1", b""
+    )
+    assert status == 200 and categories == [{"id": 0, "name": "Campsite"}]
 
 
 def test_search_validation() -> None:
@@ -31,6 +43,12 @@ def test_search_validation() -> None:
     assert status == 400 and "campground" in body["error"]
     status, body = _search(
         **{**base, "rec_area": 99999}, start_date="2023-06-10", end_date="2023-06-12"
+    )
+    assert status == 400 and "Unknown park" in body["error"]
+    status, body = _search(
+        **{**base, "rec_area": "aspira-99"},
+        start_date="2023-06-10",
+        end_date="2023-06-12",
     )
     assert status == 400 and "Unknown park" in body["error"]
 

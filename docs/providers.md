@@ -1,8 +1,8 @@
 # Providers
 
-camply works with a single provider, **`GoingToCamp`**. A "provider" is an Online Booking
-Service that lists camping and recreation inventory. `GoingToCamp` is the default, so you
-don't need to pass **`--provider`**.
+camply works with two providers, **`GoingToCamp`** and **`Aspira`**. A "provider" is an
+Online Booking Service that lists camping and recreation inventory. `GoingToCamp` is the
+default, so you only need to pass **`--provider Aspira`** for Aspira parks.
 
 ## GoingToCamp
 
@@ -43,3 +43,24 @@ Check out the following documentation examples for more details on searching Goi
 
 - [Searching for a Campsite](command_line_usage.md#searching-for-a-campsite)
 - [Searching Using Equipment](command_line_usage.md#searching-using-equipment)
+
+## Aspira
+
+Alberta, Prince Edward Island and Saskatchewan provincial parks book through Aspira's
+ReserveAmerica sites, a different system from GoingToCamp.
+
+| ID  | Recreation Area                       | Province             | Website                                                        |
+| --- | ------------------------------------- | -------------------- | -------------------------------------------------------------- |
+| 1   | Alberta Parks                         | Alberta              | [shop.albertaparks.ca](https://shop.albertaparks.ca)           |
+| 2   | Prince Edward Island Provincial Parks | Prince Edward Island | [www.peiprovincialparks.ca](https://www.peiprovincialparks.ca) |
+| 3   | Saskatchewan Provincial Parks         | Saskatchewan         | [parks.saskatchewan.ca](https://parks.saskatchewan.ca)         |
+
+```shell
+camply campgrounds --provider Aspira --rec-area 3
+camply campsites --provider Aspira --rec-area 3 --campground 290125     --start-date 2026-11-24 --end-date 2026-11-27
+```
+
+These sites sit behind a waiting-room queue; camply waits for it to redirect back to the
+site. Because of the queue, Aspira parks can only be searched once: `--continuous` and
+`--search-forever` aren't supported, and notifications need `--search-once` (a YAML
+search needs `continuous: false` or `search_once: true`).

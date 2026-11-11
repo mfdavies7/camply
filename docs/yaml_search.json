@@ -227,7 +227,8 @@
       "title": "ProviderEnum",
       "description": "Campsite Provider Names",
       "enum": [
-        "GoingToCamp"
+        "GoingToCamp",
+        "Aspira"
       ],
       "type": "string"
     }

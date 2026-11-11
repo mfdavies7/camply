@@ -252,9 +252,12 @@ class GoingToCamp(BaseProvider):
         site_details = self._location_resources[resource_location_id][str(resource_id)]
         site_attributes = {}
         for attribute in site_details["definedAttributes"]:
-            attribute_detail = attribute_details[
+            # /attribute/filterable omits non-filterable attributes sites can carry
+            attribute_detail = attribute_details.get(
                 f"{attribute['attributeDefinitionId']}"
-            ]
+            )
+            if attribute_detail is None:
+                continue
             attribute_name = _fetch_nested_key(
                 attribute_detail, "localizedValues", 0, "displayName"
             )
@@ -376,15 +379,7 @@ class GoingToCamp(BaseProvider):
         )
 
         campgrounds = []
-        # Fetch campgrounds details for all facilities
-        for camp_details in self._api_request(rec_area_id, "CAMP_DETAILS"):
-            self.campground_details[camp_details["resourceLocationId"]] = camp_details
-            # Some sites (e.g. Parks Canada) only link locations to maps via mapLinks
-            for link in camp_details.get("mapLinks") or []:
-                if link.get("resourceLocationId") is not None:
-                    self.campground_details.setdefault(
-                        link["resourceLocationId"], {"mapId": link["childMapId"]}
-                    )
+        self._load_campground_details(rec_area_id)
 
         # If a search string is provided, make sure every facility name contains
         # the search string
@@ -412,6 +407,19 @@ class GoingToCamp(BaseProvider):
         logger.info(f"{len(campgrounds)} Matching Campgrounds Found")
         log_sorted_response(response_array=campgrounds)
         return campgrounds
+
+    def _load_campground_details(self, rec_area_id: int) -> None:
+        """
+        Fetch campground (map) details for all facilities into `campground_details`
+        """
+        for camp_details in self._api_request(rec_area_id, "CAMP_DETAILS"):
+            self.campground_details[camp_details["resourceLocationId"]] = camp_details
+            # Some sites (e.g. Parks Canada) only link locations to maps via mapLinks
+            for link in camp_details.get("mapLinks") or []:
+                if link.get("resourceLocationId") is not None:
+                    self.campground_details.setdefault(
+                        link["resourceLocationId"], {"mapId": link["childMapId"]}
+                    )
 
     def _hostname_for(self, recreation_area_id: int) -> str:
         for hostname, recreation_area in RECREATION_AREAS.items():
