@@ -276,8 +276,8 @@ PAGE = """<!doctype html>
     <select id="campground" required disabled><option value="">Choose a park first</option></select>
 
     <div class="row">
-      <div><label for="start">Arriving</label><input type="date" id="start" required></div>
-      <div><label for="end">Leaving</label><input type="date" id="end" required></div>
+      <div><label for="start">Search Start Date</label><input type="date" id="start" required></div>
+      <div><label for="end">Search End Date</label><input type="date" id="end" required></div>
     </div>
 
     <label for="nights">Nights in a row <span class="hint">(at least this many)</span></label>
@@ -295,6 +295,21 @@ PAGE = """<!doctype html>
 const $ = (id) => document.getElementById(id);
 const today = new Date().toISOString().slice(0, 10);
 $("start").min = $("end").min = today;
+
+// Keep end after start (the end date is checkout, so it must be at least a day later)
+// and nights within 1..nights in the window. ISO date strings compare correctly as text.
+const DAY = 86400000;
+function syncDates() {
+  const start = $("start").value, end = $("end"), nights = $("nights");
+  if (!start) return;
+  const minEnd = new Date(Date.parse(start) + DAY).toISOString().slice(0, 10);
+  end.min = minEnd;
+  if (!end.value || end.value < minEnd) end.value = minEnd;
+  const maxNights = Math.round((Date.parse(end.value) - Date.parse(start)) / DAY);
+  nights.max = maxNights;
+  nights.value = Math.min(Math.max(parseInt(nights.value, 10) || 1, 1), maxNights);
+}
+["start", "end", "nights"].forEach((id) => $(id).addEventListener("change", syncDates));
 
 let pending = 0;  // overlapping requests (e.g. park change chains category -> campground)
 function setPending(delta) {
