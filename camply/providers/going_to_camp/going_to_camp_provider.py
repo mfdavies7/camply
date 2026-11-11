@@ -35,7 +35,7 @@ ENDPOINTS = {
     "LIST_RESOURCE_CATEGORY": "https://{}/api/resourcecategory",
     "LIST_RESOURCE_STATUS": "https://{}/api/availability/resourcestatus",
     "MAPDATA": "https://{}/api/availability/map",
-    "SITE_DETAILS": "https://{}/api/resource/details",
+    "SITE_DETAILS": "https://{}/api/resourcelocation/resources",
     "ATTRIBUTE_DETAILS": "https://{}/api/attribute/filterable",
 }
 
@@ -145,7 +145,9 @@ class GoingToCamp(BaseProvider):
                         attribute_enum_detail, "localizedValues", 0, "displayName"
                     )
 
-    def get_site_details(self, rec_area_id: int, resource_id: int):
+    def get_site_details(
+        self, rec_area_id: int, resource_id: int, resource_location_id: int
+    ):
         """
         Get the details about a site in a recreation area
 
@@ -154,6 +156,8 @@ class GoingToCamp(BaseProvider):
         rec_area_id: int
             Recreation Area ID by which to filter
         resource_id: int
+        resource_location_id: int
+            Campground (resource location) the site belongs to
 
         Returns
         -------
@@ -166,9 +170,16 @@ class GoingToCamp(BaseProvider):
             )
         attribute_details = self._attribute_details
 
-        site_details = self._api_request(
-            rec_area_id, "SITE_DETAILS", {"resourceId": resource_id}
-        )
+        # /api/resource/details was removed; fetch all sites per campground once
+        if not hasattr(self, "_location_resources"):
+            self._location_resources = {}
+        if resource_location_id not in self._location_resources:
+            self._location_resources[resource_location_id] = self._api_request(
+                rec_area_id,
+                "SITE_DETAILS",
+                {"resourceLocationId": resource_location_id},
+            )
+        site_details = self._location_resources[resource_location_id][str(resource_id)]
         site_attributes = {}
         for attribute in site_details["definedAttributes"]:
             attribute_detail = attribute_details[
@@ -286,6 +297,12 @@ class GoingToCamp(BaseProvider):
         # Fetch campgrounds details for all facilities
         for camp_details in self._api_request(rec_area_id, "CAMP_DETAILS"):
             self.campground_details[camp_details["resourceLocationId"]] = camp_details
+            # Some sites (e.g. Parks Canada) only link locations to maps via mapLinks
+            for link in camp_details.get("mapLinks") or []:
+                if link.get("resourceLocationId") is not None:
+                    self.campground_details.setdefault(
+                        link["resourceLocationId"], {"mapId": link["childMapId"]}
+                    )
 
         # If a search string is provided, make sure every facility name contains
         # the search string
@@ -424,7 +441,9 @@ class GoingToCamp(BaseProvider):
         -------
         Tuple[dict, CampgroundFacility]
         """
-        self.campground_details[facility.resource_location_id]
+        # Some facilities (e.g. Parks Canada) are listed but have no camp details
+        if facility.resource_location_id not in self.campground_details:
+            return facility, None
         facility.id = _fetch_nested_key(
             self.campground_details, facility.resource_location_id, "mapId"
         )

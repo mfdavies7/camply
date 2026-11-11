@@ -70,7 +70,8 @@ docker run --rm -d \
   --env TZ="America/Denver" \
   juftin/camply \
   camply campsites \
-      --rec-area 2991 \
+      --rec-area 14 \
+      --campground -2147483643 \
       --start-date 2023-08-01 \
       --end-date 2023-09-01 \
       --search-forever \
@@ -88,7 +89,8 @@ docker run --rm \
   --volume ${HOME}/.camply:/home/camply/.camply \
   juftin/camply \
   camply campsites \
-      --provider yellowstone \
+      --rec-area 14 \
+      --campground -2147483643 \
       --start-date 2023-07-22 \
       --end-date 2023-07-27 \
       --search-forever \
@@ -148,7 +150,5 @@ available.
 - Optional Environment Variables
     - `LOG_LEVEL` (sets logging level, defaults to "INFO")
     - `PUSHOVER_PUSH_TOKEN` (Personal Pushover App Token)
-    - `RIDB_API_KEY` (Personal API Key
-      for [Recreation.gov API](https://ridb.recreation.gov/profile))
     - `TZ` ([TZ Database Name](https://en.wikipedia.org/wiki/List_of_tz_database_time_zones) for
       logging, defaults to UTC)

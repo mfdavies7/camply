@@ -149,7 +149,9 @@ class SearchGoingToCamp(BaseCampingSearch):
                 )
                 for site in sites:
                     site_details = self.campsite_finder.get_site_details(
-                        self._recreation_area_id, site.resource_id
+                        self._recreation_area_id,
+                        site.resource_id,
+                        campground.facility_id,
                     )
                     nights = (search_window.end_date - current_start_date).days
                     start_dt = datetime.combine(current_start_date, time.min)
@@ -173,10 +175,8 @@ class SearchGoingToCamp(BaseCampingSearch):
 
                     # Some rec areas have zero-capacity sites, which should not
                     # be viable for camping. Skip all zero-capacity sites.
-                    if (
-                        not site_details["minCapacity"]
-                        or not site_details["maxCapacity"]
-                    ):
+                    # A null minCapacity just means no minimum (e.g. Parks Canada)
+                    if not site_details["maxCapacity"]:
                         continue
 
                     available_sites.append(
@@ -193,7 +193,7 @@ class SearchGoingToCamp(BaseCampingSearch):
                                 "Service Type", "Unknown"
                             ),
                             campsite_occupancy=(
-                                site_details["minCapacity"],
+                                site_details["minCapacity"] or 1,
                                 site_details["maxCapacity"],
                             ),
                             campsite_use_type="N/A",

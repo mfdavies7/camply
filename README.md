@@ -7,8 +7,8 @@
 
 **`camply`**, the campsite finder ⛺️, is a tool to help you book a campsite online. Finding
 reservations at sold out campgrounds can be tough. That's where camply comes in. It searches
-thousands of campgrounds across the ~~USA~~ world via the APIs of booking services like
-[recreation.gov](https://recreation.gov). It continuously checks for cancellations and
+Canadian national, provincial and regional parks via the [GoingToCamp](https://goingtocamp.com)
+booking platform. It continuously checks for cancellations and
 availabilities to pop up - once a campsite becomes available, camply sends you a notification
 to book your spot!
 
@@ -42,16 +42,17 @@ pipx install camply
 
 ## Usage
 
-Search for a specific recreation area (recreation areas contain campgrounds):
+List the supported recreation areas (recreation areas contain campgrounds):
 
 ```commandline
-camply recreation-areas --search "Glacier National Park"
+camply recreation-areas
 ```
 
-Search for campgrounds (campgrounds contain campsites):
+Search for campgrounds inside a recreation area (campgrounds contain campsites).
+Recreation Area #14 is Parks Canada:
 
 ```commandline
-camply campgrounds --search "Fire Lookout Towers" --state CA
+camply campgrounds --rec-area 14 --search "Two Jack"
 ```
 
 Search for available campsites, get a notification whenever one becomes
@@ -61,58 +62,28 @@ is using `silent` notifications as an example but camply also supports `Email`,
 and `Webhook`.
 
 ```commandline
-camply campsites \
-    --rec-area 2725 \
-    --start-date 2023-07-10 \
-    --end-date 2023-07-18 \
-    --notifications silent \
-    --search-forever
+camply campsites     --rec-area 14     --campground -2147483643     --start-date 2023-07-10     --end-date 2023-07-18     --notifications silent     --search-forever
 ```
 
 ## Providers
 
-camply works with a number of providers. A "provider" is an online booking
-service that lists camping and recreation inventory.
+camply searches a single provider, **`GoingToCamp`** ([goingtocamp.com](https://goingtocamp.com)),
+which is the default. It covers the following Canadian recreation areas:
 
-- **`RecreationDotGov`**: Searches on [Recreation.gov](https://recreation.gov) for Campsites (default provider)
-- **`Yellowstone`**: Searches on [YellowstoneNationalParkLodges.com](https://yellowstonenationalparklodges.com) for
-  Campsites
-- **`ReserveCalifornia`**: Searches on [ReserveCalifornia.com](https://reservecalifornia.com) for Campsites (California
-  State Parks)
-- **`GoingToCamp`**: Searches on [GoingToCamp](https://goingtocamp.com) for Campsites
-    - Parks Canada - Canada National Parks - [reservation.pc.gc.ca](https://reservation.pc.gc.ca/)
-    - Washington State Parks - Washington, USA - [washington.goingtocamp.com](https://washington.goingtocamp.com)
-    - Wisconsin State Parks - Wisconsin, USA - [wisconsin.goingtocamp.com](https://wisconsin.goingtocamp.com)
-    - Michigan State Parks - Michigan, USA - [midnrreservations.com](https://midnrreservations.com/)
-    - BC Parks - British Columbia, CA - [camping.bcparks.ca](https://camping.bcparks.ca)
-    - Maryland State Parks - Maryland, USA - [parkreservations.maryland.gov](https://parkreservations.maryland.gov)
-    - Nova Scotia Parks - Nova Scotia, CA - [novascotia.goingtocamp.com](https://novascotia.goingtocamp.com)
-    - Manitoba Parks - Manitoba, CA - [manitoba.goingtocamp.com](https://manitoba.goingtocamp.com)
-    - New Brunswick Provincial Parks - New Brunswick, CA - [parcsnbparks.info](https://www.parcsnbparks.info/)
-    - Newfoundland & Labrador Provincial Parks - Newfoundland and Labrador, CA - [nlcamping.ca](https://nlcamping.ca)
-    - Long Point Region - Ontario, CA - [longpoint.goingtocamp.com](https://longpoint.goingtocamp.com)
-    - Algonquin Highlands - Ontario, CA - [ahtrails.ca](https://ahtrails.ca)
-    - Maitland Valley, Ontario, CA - [maitlandvalley.goingtocamp.com](https://maitlandvalley.goingtocamp.com)
-    - Saugeen Valley - Ontario, CA - [saugeen.goingtocamp.com](https://saugeen.goingtocamp.com)
-    - St. Clair Region - Ontario, CA - [stclair.goingtocamp.com](https://stclair.goingtocamp.com)
-    - Tacoma Power Parks, Washington, USA - [tacomapower.goingtocamp.com](https://tacomapower.goingtocamp.com)
-    - Gatineau Park - Ontario-Quebec, CA - [reservations.ncc-ccn.gc.ca](https://reservations.ncc-ccn.gc.ca)
-- **`AlabamaStateParks`**: Searches on [ReserveAlaPark.com](https://reservealapark.com) for Campsites
-- **`ArizonaStateParks`**: Searches on [AZStateParks.com](https://azstateparks.com) for Campsites
-- **`FloridaStateParks`**: Searches on [FloridaStateParks.org](https://www.reserve.floridastateparks.org) for Campsites
-- **`MinnesotaStateParks`**: Searches on [ReserveMN.usedirect.com](https://reservemn.usedirect.com) for Campsites
-- **`MissouriStateParks`**: Searches on [icampmo1.usedirect.com](https://icampmo1.usedirect.com) for Campsites
-- **`OhioStateParks`**: Searches on [ReserveOhio.com](https://reserveohio.com) for Campsites
-- **`VirginiaStateParks`**: Searches on [ReserveVAParks.com](https://reservevaparks.com) for Campsites
-- **`NorthernTerritory`**: Searches the [Australian Northern Territory](https://parkbookings.nt.gov.au) for Campsites
-- **`FairfaxCountyParks`**: Searches on [fairfax.usedirect.com](https://fairfax.usedirect.com) for Campsites (Virginia)
-- **`MaricopaCountyParks`**: Searches on [MaricopaCountyParks.org](https://maricopacountyparks.org) for Campsites (Arizona)
-- **`OregonMetro`**: Searches on [OregonMetro.gov](https://oregonmetro.gov) for Campsites (Portland Metro)
-- **`RecreationDotGovTicket`**: Searches on [Recreation.gov](https://recreation.gov) for Tickets and Tours
-- **`RecreationDotGovTimedEntry`**: Searches on [Recreation.gov](https://recreation.gov) for Timed Entries
+- Parks Canada - Canada National Parks - [reservation.pc.gc.ca](https://reservation.pc.gc.ca/)
+- BC Parks - British Columbia - [camping.bcparks.ca](https://camping.bcparks.ca)
+- Manitoba Parks - Manitoba - [manitoba.goingtocamp.com](https://manitoba.goingtocamp.com)
+- Nova Scotia Parks - Nova Scotia - [novascotia.goingtocamp.com](https://novascotia.goingtocamp.com)
+- New Brunswick Provincial Parks - New Brunswick - [parcsnbparks.info](https://www.parcsnbparks.info/)
+- Newfoundland & Labrador Provincial Parks - Newfoundland and Labrador - [nlcamping.ca](https://nlcamping.ca)
+- Gatineau Park - Ontario-Quebec - [reservations.ncc-ccn.gc.ca](https://reservations.ncc-ccn.gc.ca)
+- Algonquin Highlands - Ontario - [ahtrails.ca](https://ahtrails.ca)
+- Long Point Region - Ontario - [longpoint.goingtocamp.com](https://longpoint.goingtocamp.com)
+- Maitland Valley - Ontario - [maitlandvalley.goingtocamp.com](https://maitlandvalley.goingtocamp.com)
+- Saugeen Valley - Ontario - [saugeen.goingtocamp.com](https://saugeen.goingtocamp.com)
+- St. Clair Region - Ontario - [stclair.goingtocamp.com](https://stclair.goingtocamp.com)
 
-Run **`camply providers`** to list current providers and visit the [Providers](https://juftin.com/camply/providers/)
-section in the docs to learn more.
+Visit the [Providers](https://juftin.com/camply/providers/) section in the docs to learn more.
 
 ## Documentation
 
@@ -125,9 +96,9 @@ Head over to the [camply documentation](https://juftin.com/camply/) to see what 
 
  Welcome to camply, the campsite finder.
  Finding reservations at sold out campgrounds can be tough. That's where camply comes in. It searches the
- APIs of booking services like https://recreation.gov (which indexes thousands of campgrounds across the
- USA) to continuously check for cancellations and availabilities to pop up. Once a campsite becomes
- available, camply sends you a notification to book your spot!
+ APIs of booking services like GoingToCamp (which serves Parks Canada and provincial parks) to
+ continuously check for cancellations and availabilities to pop up. Once a campsite becomes available,
+ camply sends you a notification to book your spot!
 
 
  visit the camply documentation at https://juftin.com/camply
@@ -135,7 +106,7 @@ Head over to the [camply documentation](https://juftin.com/camply/) to see what 
 ╭─ Options ──────────────────────────────────────────────────────────────────────────────────────────────╮
 │                                                                                                        │
 │  --debug/--no-debug             Enable extra debugging output                                          │
-│  --provider              TEXT   Camping Search Provider. Defaults to 'RecreationDotGov'                │
+│  --provider              TEXT   Camping Search Provider. Defaults to 'GoingToCamp'                     │
 │  --version                      Show the version and exit.                                             │
 │  --help                         Show this message and exit.                                            │
 │                                                                                                        │
@@ -159,10 +130,6 @@ Head over to the [camply documentation](https://juftin.com/camply/) to see what 
 
 Camply doesn't support your favorite campsite booking provider yet? Consider
 [contributing](https://juftin.com/camply/contributing/) 😉.
-
-<br/>
-
-Recreation data provided by [**Recreation.gov**](https://ridb.recreation.gov/)
 
 ---
 

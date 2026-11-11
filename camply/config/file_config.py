@@ -75,12 +75,6 @@ class FileConfig:
         APPRISE_URL={"default": "", "notes": "Apprise notification URL"},
         WEBHOOK_URL={"default": "", "notes": "Webhook URL"},
         WEBHOOK_HEADERS={"default": "", "notes": "Webhook JSON Headers"},
-        RIDB_API_KEY={
-            "default": "",
-            "notes": "Personal Recreation.gov API Key (not required)",
-        },
     )
 
     PROVIDERS_DIRECTORY = CAMPLY_DIRECTORY.joinpath("providers")
-    RESERVE_CALIFORNIA_PROVIDER = PROVIDERS_DIRECTORY.joinpath("reserve_california")
-    USEDIRECT_PROVIDER = PROVIDERS_DIRECTORY.joinpath("usedirect")

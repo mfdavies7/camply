@@ -16,11 +16,6 @@ RECREATION_AREAS = {
         recreation_area_id=2,
         recreation_area_location="Ontario, CA",
     ),
-    "washington.goingtocamp.com": RecreationArea(
-        recreation_area="Washington State Parks",
-        recreation_area_id=3,
-        recreation_area_location="Washington, USA",
-    ),
     "maitlandvalley.goingtocamp.com": RecreationArea(
         recreation_area="Maitland Valley",
         recreation_area_id=4,
@@ -31,25 +26,10 @@ RECREATION_AREAS = {
         recreation_area_id=5,
         recreation_area_location="Ontario, CA",
     ),
-    "tacomapower.goingtocamp.com": RecreationArea(
-        recreation_area="Tacoma Power Parks",
-        recreation_area_id=6,
-        recreation_area_location="Washington, USA",
-    ),
-    "wisconsin.goingtocamp.com": RecreationArea(
-        recreation_area="Wisconsin State Parks",
-        recreation_area_id=7,
-        recreation_area_location="Wisconsin, USA",
-    ),
     "ahtrails.ca": RecreationArea(
         recreation_area="Algonquin Highlands",
         recreation_area_id=8,
         recreation_area_location="Ontario, CA",
-    ),
-    "parkreservations.maryland.gov": RecreationArea(
-        recreation_area="Maryland State Parks",
-        recreation_area_id=9,
-        recreation_area_location="Maryland, USA",
     ),
     "reservations.ncc-ccn.gc.ca": RecreationArea(
         recreation_area="Gatineau Park",
@@ -85,10 +65,5 @@ RECREATION_AREAS = {
         recreation_area="New Brunswick Provincial Parks",
         recreation_area_id=16,
         recreation_area_location="New Brunswick, CA",
-    ),
-    "midnrreservations.com": RecreationArea(
-        recreation_area="Michigan State Parks",
-        recreation_area_id=17,
-        recreation_area_location="Michigan, USA",
     ),
 }

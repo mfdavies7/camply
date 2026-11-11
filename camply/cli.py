@@ -23,25 +23,21 @@ import click
 from rich import traceback
 from rich_click import RichCommand, RichGroup, rich_click
 
-from camply import Yellowstone, __application__, __version__
-from camply.config import EquipmentOptions, SearchConfig, logging_config
+from camply import __application__, __version__
+from camply.config import SearchConfig, logging_config
 from camply.config.logging_config import set_up_logging
 from camply.containers import SearchWindow
 from camply.containers.examples import example_campsite
 from camply.notifications import CAMPSITE_NOTIFICATIONS, MultiNotifierProvider
-from camply.providers import (
-    GoingToCamp,
-    RecreationDotGov,
-)
+from camply.providers import GoingToCamp
 from camply.search import CAMPSITE_SEARCH_PROVIDER, BaseCampingSearch
 from camply.utils import configure_camply, log_camply, make_list, yaml_utils
 from camply.utils.general_utils import days_of_the_week_mapping, handle_search_windows
-from camply.utils.logging_utils import log_sorted_response
 
 logging.Logger.camply = log_camply
 logger = logging.getLogger(__name__)
 
-DEFAULT_CAMPLY_PROVIDER: str = RecreationDotGov.__name__
+DEFAULT_CAMPLY_PROVIDER: str = GoingToCamp.__name__
 
 rich_click.STYLE_OPTION = "bold green"
 rich_click.STYLE_SWITCH = "bold blue"
@@ -90,7 +86,7 @@ provider_argument = click.option(
     show_default=False,
     default=None,
     type=click.Choice(CAMPSITE_SEARCH_PROVIDER.keys(), case_sensitive=False),
-    help="Camping Search Provider. Defaults to 'RecreationDotGov'",
+    help="Camping Search Provider. Defaults to 'GoingToCamp'",
     metavar="TEXT",
     envvar="CAMPLY_PROVIDER",
 )
@@ -152,7 +148,7 @@ def camply_command_line(
 
     Finding reservations at sold out campgrounds can be
     tough. That's where camply comes in. It searches the APIs of booking services like
-    https://recreation.gov (which indexes thousands of campgrounds across the USA) to continuously
+    GoingToCamp (which serves Parks Canada and provincial parks) to continuously
     check for cancellations and availabilities to pop up. Once a campsite becomes available,
     camply sends you a notification to book your spot!
 
@@ -234,8 +230,6 @@ def equipment_types(
 
     if provider == GoingToCamp.__name__:
         GoingToCamp().list_equipment_types(rec_area[0])
-    elif provider.startswith(RecreationDotGov.__name__):
-        log_sorted_response(response_array=EquipmentOptions.__all_accepted_equipment__)
     else:
         logger.warning(
             "That Provider doesn't support equipment based searching, yet 🙂"
@@ -270,7 +264,7 @@ def recreation_areas(
         [
             search is None,
             state is not None,
-            provider in [Yellowstone.__name__, GoingToCamp.__name__],
+            provider == GoingToCamp.__name__,
         ]
     ):
         # State Filtering Not Supported
@@ -280,8 +274,6 @@ def recreation_areas(
         sys.exit(1)
     if provider == GoingToCamp.__name__:
         rec_area_finder = GoingToCamp()
-    elif provider.startswith(RecreationDotGov.__name__):
-        rec_area_finder = RecreationDotGov()
     else:
         rec_area_finder = CAMPSITE_SEARCH_PROVIDER[provider]
     params = {}
@@ -328,7 +320,7 @@ def campgrounds(
             len(rec_area) == 0,
             len(campground) == 0,
             len(campsite) == 0,
-            provider not in [Yellowstone.__name__, GoingToCamp.__name__],
+            provider != GoingToCamp.__name__,
         ]
     ):
         logger.error(
@@ -559,20 +551,6 @@ def _validate_campsites(
         Tuple containing continuous run eval, search_windows,
         and days of the week
     """
-    if provider.startswith(RecreationDotGov.__name__) and all(
-        [
-            len(rec_area) == 0,
-            len(campground) == 0,
-            len(campsite) == 0,
-            yaml_config is None,
-        ]
-    ):
-        logger.error(
-            "To search for Recreation.gov Campsites you must provide "
-            "either the --rec-area, --campground, or --campsite "
-            "parameters."
-        )
-        sys.exit(1)
     if yaml_config is None:
         search_windows = handle_search_windows(start_date=start_date, end_date=end_date)
     else:

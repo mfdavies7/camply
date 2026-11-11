@@ -37,7 +37,7 @@ class YamlSearchFile(CamplyModel):
     """
 
     provider: ProviderEnum = Field(
-        description="Campsite provider", default="RecreationDotGov"
+        description="Campsite provider", default="GoingToCamp"
     )
     recreation_area: ArrayOrSingle = None
     campgrounds: ArrayOrSingle = None

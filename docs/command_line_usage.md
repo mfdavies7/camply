@@ -1,8 +1,8 @@
 # Command Line Usage
 
 When installed, `camply`'s command line utility can be invoked with the command, `camply`. The CLI
-tool accepts one of six sub-arguments: `campsites`, `recreation-areas`, `campgrounds`, `providers`,
-`equipment-types`, and `configure`.
+tool accepts the sub-commands `campsites`, `recreation-areas`, `campgrounds`, `providers`,
+`equipment-types`, `configure`, `test-notifications`, and `tui`.
 
 !!! important
 
@@ -17,9 +17,9 @@ tool accepts one of six sub-arguments: `campsites`, `recreation-areas`, `campgro
 
  Welcome to camply, the campsite finder.
  Finding reservations at sold out campgrounds can be tough. That's where camply comes in. It searches the
- APIs of booking services like https://recreation.gov (which indexes thousands of campgrounds across the
- USA) to continuously check for cancellations and availabilities to pop up. Once a campsite becomes
- available, camply sends you a notification to book your spot!
+ APIs of booking services like GoingToCamp (which serves Parks Canada and provincial parks) to
+ continuously check for cancellations and availabilities to pop up. Once a campsite becomes available,
+ camply sends you a notification to book your spot!
 
 
  visit the camply documentation at https://juftin.com/camply
@@ -27,7 +27,7 @@ tool accepts one of six sub-arguments: `campsites`, `recreation-areas`, `campgro
 ╭─ Options ──────────────────────────────────────────────────────────────────────────────────────────────╮
 │                                                                                                        │
 │  --debug/--no-debug             Enable extra debugging output                                          │
-│  --provider              TEXT   Camping Search Provider. Defaults to 'RecreationDotGov'                │
+│  --provider              TEXT   Camping Search Provider. Defaults to 'GoingToCamp'                     │
 │  --version                      Show the version and exit.                                             │
 │  --help                         Show this message and exit.                                            │
 │                                                                                                        │
@@ -38,7 +38,6 @@ tool accepts one of six sub-arguments: `campsites`, `recreation-areas`, `campgro
 │  campsites                Find Available Campsites with Custom Search Criteria                         │
 │  configure                Set up camply configuration file with an interactive console                 │
 │  equipment-types          Get a list of supported equipment                                            │
-│  list-campsites           List campsite IDs for a given campground or recreation area                  │
 │  providers                List the different camply providers                                          │
 │  recreation-areas         Search for Recreation Areas and list them                                    │
 │  test-notifications       Test your notification provider setup                                        │
@@ -49,18 +48,18 @@ tool accepts one of six sub-arguments: `campsites`, `recreation-areas`, `campgro
 
 ## Simple Examples
 
-[Search for a specific recreation area](#search-for-recreation-areas-by-query-string) (recreation
+[List the supported recreation areas](#search-for-recreation-areas-by-query-string) (recreation
 areas contain campgrounds):
 
 ```commandline
-camply recreation-areas --search "Glacier National Park"
+camply recreation-areas
 ```
 
-[Search for campgrounds](#look-for-specific-campgrounds-by-query-string) (campgrounds
-contain campsites):
+[Search for campgrounds inside a recreation area](#look-for-specific-campgrounds-within-a-recreation-area)
+(campgrounds contain campsites). Recreation Area #14 is Parks Canada:
 
 ```commandline
-camply campgrounds --search "Fire Lookout Towers" --state CA
+camply campgrounds --rec-area 14 --search "Two Jack"
 ```
 
 [Search for available campsites](#searching-for-a-campsite),
@@ -69,7 +68,8 @@ camply campgrounds --search "Fire Lookout Towers" --state CA
 
 ```commandline
 camply campsites \
-    --rec-area 2725 \
+    --rec-area 14 \
+    --campground -2147483643 \
     --start-date 2023-07-10 \
     --end-date 2023-07-18 \
     --notifications email \
@@ -86,27 +86,27 @@ camply providers
 
 !!! note
 
-    If no provider is specified, camply will use the default provider,
-    **`RecreationDotGov`**, which searches for recreation areas,
-    campgrounds, and campsites listed on https://recreation.gov
+    camply has a single provider, **`GoingToCamp`**, which is used by default.
+    It searches Canadian recreation areas, campgrounds, and campsites
+    listed on https://goingtocamp.com
 
 ## campsites
 
 Search for a campsite within camply. Campsites are returned based on the search criteria provided.
 Campsites contain properties like booking date, site type (tent, RV, cabin, etc), capacity, price,
 and a link to make the booking. Required parameters include `--start-date`, `--end-date`,
-`--rec-area` / `--campground` / `--campsite`. Constant searching functionality can be enabled with
+a single `--rec-area`, and at least one `--campground`. Constant searching functionality can be enabled with
 `--continuous` and notifications can be enabled using `--notifications` (see the
 [Send a Push Notification](#send-a-push-notification) section for more information).
 
 ### Arguments
 
 - `--rec-area`: `RECREATION_AREA_ID`
-    - Add Recreation Areas (comprised of campgrounds) by ID.
+    - The Recreation Area (comprised of campgrounds) to search, by ID. Only one is allowed.
       [\*\*_example_](#searching-for-a-campsite)
 - `--campground`: `CAMPGROUND_ID`
     - Add individual Campgrounds by ID.
-      [\*\*_example_](#searching-for-a-campsite-by-campground-id)
+      [\*\*_example_](#searching-for-a-campsite)
 - `--campsite`: `CAMPSITE_ID`
     - Add individual Campsites by ID.
       [\*\*_example_](#searching-for-a-specific-campsite-by-id)
@@ -127,12 +127,7 @@ and a link to make the booking. Required parameters include `--start-date`, `--e
       found.
       [\*\*_example_](#look-for-consecutive-nights-at-the-same-campsite)
 - `--provider`: `PROVIDER`
-    - Camping Search Provider. Defaults to 'RecreationDotGov', not case-sensitive. Options include:
-      [RecreationDotGov](#searching-for-a-campsite), [Yellowstone](#look-for-a-campsite-inside-of-yellowstone),
-      [GoingToCamp](#look-for-a-campsite-from-goingtocamp), [RecreationDotGovDailyTicket](#tickets-tours),
-      [RecreationDotGovDailyTimedEntry](#timed-entry), [RecreationDotGovTicket](#tickets-tours),
-      [RecreationDotGovTimedEntry](#timed-entry).
-      [\*\*_example_](#look-for-a-campsite-inside-of-yellowstone)
+    - Camping Search Provider. Defaults to 'GoingToCamp', the only supported provider, not case-sensitive.
 - `--continuous`
     - Continuously check for a campsite to become available, and quit once at least one campsite is
       found.
@@ -148,17 +143,11 @@ and a link to make the booking. Required parameters include `--start-date`, `--e
       `webhook`, `silent`.
       Defaults to `silent` - which just logs messages to console.
       [\*\*_example_](#send-a-push-notification)
-- `--equipment`
-    - Search for campsites compatible with your camping equipment. This argument accepts two
-      options, the equipment name and its length If you don't want to filter based on length provide
-      a length of 0. Accepted equipment names include `Tent`, `RV`. `Trailer`, `Vehicle` and are
-      not case-sensitive.
-      [\*\*_example_](#searching-for-a-campsite-that-fits-your-equipment)
 - `--equipment-id`
-    - Search for campsites campaitble with specific equipment categories. Going To Camp
+    - Search for campsites compatible with specific equipment categories. GoingToCamp
       uses equipment category IDs for filtering campsites by equipment. Every recreation
       area has equipment categories unique to it.
-      [\*\*_example_](#searching-goingtocamp-using-equipment)
+      [\*\*_example_](#searching-using-equipment)
 - `--notify-first-try`
     - Enables continuous searching. Whether to send all non-silent notifications if more than 5
       matching campsites are found on the first try. Defaults to false which only sends the first5.
@@ -190,25 +179,24 @@ and a link to make the booking. Required parameters include `--start-date`, `--e
 
 ```commandline
 camply campsites \
-    --rec-area 2725 \
+    --rec-area 14 \
+    --campground -2147483643 \
     --start-date 2023-07-10 \
     --end-date 2023-07-18
 ```
 
 ## recreation-areas
 
-Search for Recreation Areas and their IDs. Recreation Areas are places like National Parks and
-National Forests that can contain one or many campgrounds.
+Search for Recreation Areas and their IDs. Recreation Areas are park systems like Parks Canada or
+BC Parks that can contain one or many campgrounds.
 
 ### Arguments
 
 - `--search` `SEARCH`
-    - Search for Campgrounds or Recreation Areas by search string.
-- `--state` `STATE`
-    - Filter by US state code.
+    - Search for Recreation Areas by search string.
 
 ```commandline
-camply recreation-areas --search "Yosemite National Park"
+camply recreation-areas --search "Parks Canada"
 ```
 
 \*\*_see the [examples](#search-for-recreation-areas-by-query-string) for more information_
@@ -221,20 +209,18 @@ like fire towers or cabins that might only contain a single 'campsite' to book.
 
 ### Arguments
 
-- `--search` `SEARCH`
-    - Search for Campgrounds or Recreation Areas by search string.
-- `--state` `STATE`
-    - Filter by US state code.
 - `--rec-area`: `RECREATION_AREA_ID`
-    - Add Recreation Areas (comprised of campgrounds) by ID.
+    - The Recreation Area to list campgrounds for (required).
+- `--search` `SEARCH`
+    - Filter Campgrounds by search string.
 - `--campground`: `CAMPGROUND_ID`
     - Add individual Campgrounds by ID.
 
 ```commandline
-camply campgrounds --search "Fire Tower Lookout" --state CA
+camply campgrounds --rec-area 14 --search "Two Jack"
 ```
 
-\*\*_see the [examples](#look-for-specific-campgrounds-by-query-string) for more information_
+\*\*_see the [examples](#look-for-specific-campgrounds-within-a-recreation-area) for more information_
 
 ## configure
 
@@ -264,33 +250,6 @@ section for more details on how to set up the notification provider of your choi
 camply test-notifications --notifications email
 ```
 
-## list-campsites
-
-When [searching for a specific campsite by ID](#searching-for-a-specific-campsite-by-id), it can be useful
-to list the campsites that were found. This command will list the campsites that were found given specific
-camground / recreation area ID.
-
-```commandline
-camply list-campsites --campground 598 --provider ReserveCalifornia
-```
-
-That search above would tell you that `Premium Campsite #88` has ID #43473. Using that information you can then
-search for that specific campsite by ID:
-
-```commandline
-camply campsites \
-  --provider ReserveCalifornia \
-  --campground 598 \
-  --campsite 43473 \
-  --start-date 2023-07-13 \
-  --end-date 2023-07-14
-```
-
-!!! note
-
-    Some providers require that you pass a campsite ID **and** and a campground ID, while
-    others only require a campsite ID.
-
 ## tui
 
 Camply has an optional TUI interface thanks to [textual](https://github.com/textualize/textual) and
@@ -315,32 +274,38 @@ camply tui
 Read through the examples below to get a better understanding of `camply`, its features, and the
 functionality of the different arguments provided to the CLI.
 
-### Searching for a Campsite
+### Finding Campground IDs
 
-The below search looks for campsites inside of Recreation Area ID #2725 (Glacier National Park)
-between 2023-07-10 and 2023-07-17. The search will be performed once and any results will be logged
-to the console. camply searches for campsites inside of search windows in increments of one night.
-`--start-date` and `--end-date` define the bounds of the search window, you will be leaving the day
-after `--end-date`.
+GoingToCamp campsite searches need a Recreation Area ID and at least one Campground ID.
+First, find your Recreation Area ID:
 
 ```commandline
-camply campsites \
-    --rec-area 2725 \
-    --start-date 2023-07-10 \
-    --end-date 2023-07-18
+camply recreation-areas
 ```
 
-### Searching for a Campsite by Campground ID
+For this example we'll search Parks Canada, which corresponds to Recreation Area ID #14.
+Next, list the Campgrounds within the Recreation Area:
 
-The below search looks for across three campgrounds (all inside Glacier National Park)
-between 2023-07-10 and 2023-07-17. Multiple Campgrounds (and Recreation Areas too) can be found by
-supplying the arguments more than once.
+```commandline
+camply campgrounds --rec-area 14
+```
+
+The above command lists all of the campgrounds within the Recreation Area. In the
+following examples we'll search Two Jack Lakeside in Banff National Park, which
+corresponds to Campground ID #-2147483643 (GoingToCamp regularly uses negative ID numbers).
+
+### Searching for a Campsite
+
+The below search looks for campsites at Two Jack Lakeside between 2023-07-10 and 2023-07-17.
+The search will be performed once and any results will be logged to the console. camply
+searches for campsites inside of search windows in increments of one night. `--start-date`
+and `--end-date` define the bounds of the search window, you will be leaving the day after
+`--end-date`. Multiple Campgrounds can be searched by supplying `--campground` more than once.
 
 ```commandline
 camply campsites \
-    --campground 232493 \
-    --campground 251869 \
-    --campground 232492 \
+    --rec-area 14 \
+    --campground -2147483643 \
     --start-date 2023-07-10 \
     --end-date 2023-07-18
 ```
@@ -348,25 +313,15 @@ camply campsites \
 ### Searching for a Specific Campsite by ID
 
 Sometimes you have a favorite campsite inside your favorite campground. To search for just a
-specific campsite (and not just all campsites within a campground) you can give its ID to `camply`
-with the `--campsite` argument. For example, site `R035` in Many Glacier Campground, MT is close to
-a trailhead. Its URL
-is [https://www.recreation.gov/camping/campsites/98363](https://www.recreation.gov/camping/campsites/98363)
-, here we can see that it's ID is `98363`. You can search for one or many campsites by ID by
-supplying the `--campsite` argument. You can provide the `--campsite` argument once or multiple
-times to search for different campsites.
-
-!!! note
-
-    For **RecreationDotGov**, **`--campsite`** arguments override any **`--rec-area`** or **`--campground`** options
-    provided. And **`--campground`** will override the **`--rec-area`** option.
-
-    However other providers may need you to provide both a **`--campground`** and **`--campsite`** ID.
-    See the [list-campsites](#list-campsites) example for more information.
+specific campsite you can give its ID to `camply` with the `--campsite` argument, alongside
+its `--rec-area` and `--campground`. Campsite IDs are shown in the results of a regular
+campsite search. You can provide the `--campsite` argument once or multiple times.
 
 ```commandline
 camply campsites \
-    --campsite 98363 \
+    --rec-area 14 \
+    --campground -2147483643 \
+    --campsite <CAMPSITE_ID> \
     --start-date 2023-07-10 \
     --end-date 2023-07-18
 ```
@@ -387,7 +342,8 @@ once matches are found. Alternate notification methods are listed in the
 
 ```commandline
 camply campsites \
-    --rec-area 2725 \
+    --rec-area 14 \
+    --campground -2147483643 \
     --start-date 2023-07-12 \
     --end-date 2023-07-13 \
     --continuous \
@@ -418,7 +374,8 @@ passing multiple `--start-date` and `--end-date` options.
 
 ```commandline
 camply campsites \
-    --rec-area 2725 \
+    --rec-area 14 \
+    --campground -2147483643 \
     --start-date 2023-07-12 \
     --end-date 2023-07-13 \
     --start-date 2023-07-19 \
@@ -441,7 +398,8 @@ the `--search-forever` and `camply` won't stop sending notifications after the f
 
 ```commandline
 camply campsites \
-    --rec-area 2725 \
+    --rec-area 14 \
+    --campground -2147483643 \
     --start-date 2023-07-01 \
     --end-date 2023-08-01 \
     --notifications pushover \
@@ -464,7 +422,8 @@ camply supports notifications via a number of services:
 
 ```commandline
 camply campsites \
-    --rec-area 2991 \
+    --rec-area 14 \
+    --campground -2147483643 \
     --start-date 2023-09-10 \
     --end-date 2023-09-21 \
     --notifications pushover
@@ -511,7 +470,8 @@ pip install camply[twilio]
 
 ```commandline
 camply campsites \
-    --rec-area 2991 \
+    --rec-area 14 \
+    --campground -2147483643 \
     --start-date 2023-09-10 \
     --end-date 2023-09-21 \
     --notifications twilio
@@ -525,7 +485,8 @@ accept an array as well.
 
 ```commandline
 camply campsites \
-    --rec-area 2991 \
+    --rec-area 14 \
+    --campground -2147483643 \
     --start-date 2023-09-10 \
     --end-date 2023-09-21 \
     --notifications email \
@@ -556,7 +517,8 @@ are available on a Tuesday or Wednesday night.
 
 ```commandline
 camply campsites \
-    --campground 232446 \
+    --rec-area 14 \
+    --campground -2147483643 \
     --start-date 2023-05-01 \
     --end-date 2023-08-01 \
     --day Tuesday \
@@ -571,7 +533,8 @@ checks every 5 minutes instead of the default 10 minutes.
 
 ```commandline
 camply campsites \
-    --rec-area 2991 \
+    --rec-area 14 \
+    --campground -2147483643 \
     --start-date 2023-05-01 \
     --end-date 2023-08-01 \
     --weekends \
@@ -598,103 +561,32 @@ consecutive night stays, pass the `--nights` argument.
 
 ```commandline
 camply campsites \
-    --rec-area 2991 \
+    --rec-area 14 \
+    --campground -2147483643 \
     --start-date 2023-05-01 \
     --end-date 2023-08-01 \
     --nights 4
 ```
 
-### Look for a Campsite Inside of Yellowstone
+### Searching Using Equipment
 
-Yellowstone doesn't use https://recreation.gov to manage its campgrounds, instead it uses its own
-proprietary system. In order to search the Yellowstone API for campsites, make sure to pass
-the `--provider "yellowstone"` argument. This flag disables `--rec-area` argument.
+GoingToCamp allows you to search for campsites using equipment filters. In order to find the
+corresponding equipment IDs, use the `equipment-types` command and pass in the Recreation Area ID:
 
-To learn more about using `camply` to find campsites at Yellowstone, check out
-this [discussion](https://github.com/juftin/camply/discussions/15#discussioncomment-783657).
+```commandline
+camply equipment-types --rec-area 1
+```
+
+The previous command lists all of the Equipment IDs for Recreation Area #1 (Long Point Region),
+such as `Trailer up to 25ft` and `Trailer up to 40ft`. Next, use an Equipment ID in your search:
 
 ```commandline
 camply campsites \
-    --provider yellowstone \
-    --start-date 2023-07-09 \
-    --end-date 2023-07-17 \
-    --continuous
-```
-
-### Look for a Campsite from GoingToCamp
-
-!!! note
-
-    The GoingToCamp provider supports lots of different park systems, including
-    Washington State Parks, Canada National Parks, and more. See the
-    [GoingToCamp](providers.md#goingtocamp) provider documentation for more information.
-
-The `GoingToCamp` provider requires that you specify both a Recreation Area and a
-Campground in your search. First you'll need to find your Recreation Area ID:
-
-```commandline
-camply recreation-areas --provider goingtocamp
-```
-
-For this example we'll search Washington State Parks which corresponds to Recreation Area ID #4.
-Next we'll list the Campgrounds within the Recreation Area:
-
-```commandline
-camply campgrounds --provider goingtocamp --rec-area 4
-```
-
-The above command will list all of the campgrounds within our Recreation Area.
-For the next example we'll search for an availability at Bay Bridge State Park,
-which is in our Recreation Area and corresponds to Campground ID #-2147483645
-(GoingToCamp regularly uses negative ID numbers).
-
-```commandline
-camply campsites \
-  --provider goingtocamp \
-  --rec-area 4 \
-  --campground -2147483645 \
-  --start-date 2023-09-01 \
-  --end-date 2023-09-02
-```
-
-### Searching GoingToCamp Using Equipment
-
-In the [previous GoingToCamp example](#look-for-a-campsite-from-goingtocamp) we were searching
-Recreation Area ID #4 and Campground ID #-2147483645. GoingToCamp also allows
-us to search for campsites using equipment filters. In order to find the corresponding equipment
-IDs, you'll use the `equipment-types` command and pass in the Recreation Area ID:
-
-```commandline
-camply equipment-types --provider goingtocamp --rec-area 4
-```
-
-The previous command will list all of the Equipment IDs for your Recreation Area.
-For our example we will use Equipment ID #-32763 which corresponds to an `RV/Trailer up to 25'`.
-Next we can use that Equipment ID in our search:
-
-```commandline
-camply campsites \
-  --provider goingtocamp \
-  --rec-area 4 \
-  --campground -2147483645 \
+  --rec-area 1 \
+  --campground -2147483643 \
   --start-date 2023-09-01 \
   --end-date 2023-09-02 \
-  --equipment-id -32763
-```
-
-### Look for a Campsite Across Multiple Recreation areas
-
-You don't have to confine your search to a single Recreation or Campground ID. Adding multiple
-arguments to the command line will search across multiple IDs. Keep in mind that any `--campground`
-arguments will overwrite all `--rec-area` arguments.
-
-```commandline
-camply campsites \
-    --rec-area 2991 \
-    --rec-area 1074 \
-    --start-date 2023-07-09 \
-    --end-date 2023-07-17 \
-    --nights 5
+  --equipment-id -32768
 ```
 
 ### Using a YAML Configuration file to search for campsites
@@ -715,51 +607,6 @@ camply campsites --yaml-config example_search.yaml
     A JSON Schema for the YAML configuration file can be found at
     [docs/yaml_search.json](yaml_search.json)
 
-### Searching for a Campsite That Fits Your Equipment
-
-Camply can help you filter campsites to fit your specific equipment, like a Trailer or an RV.
-Most likely, you care that the campsite fits the length of your RV so you can specify that as well.
-To search for specific equipment and its length provide the `--equipment` option with two arguments,
-the equipment name and the equipment length. If you don't want to filter based on length provide a
-length of zero. If you provide multiple `--equipment` options, sites matching any of your search
-equipment will be returned.
-
-Current supported equipment names are `Vehicle`, `Tent`, `RV`, and `Trailer`. Be careful when
-filtering on `Tents` and `Vehicle` length, sometimes Recreation.gov doesn't provide that information,
-it is safer to set length to 0.
-
-```commandline
-camply campsites \
-    --rec-area 2991 \
-    --start-date 2023-07-09 \
-    --end-date 2023-07-17 \
-    --nights 5 \
-    --equipment RV 25
-```
-
-Here's what the above search would look like on a YAML Config:
-
-```yaml
-recreation_area:
-    - 2991
-start_date: 2023-07-09
-end_date: 2023-07-17
-nights: 5
-equipment:
-    - [RV, 25]
-```
-
-Finally, here's a search that accommodates trailers of all lengths:
-
-```commandline
-camply campsites \
-    --rec-area 2991 \
-    --start-date 2023-07-09 \
-    --end-date 2023-07-17 \
-    --nights 5 \
-    --equipment Trailer 0
-```
-
 ### Saving the Results of a Search
 
 In some cases, you might want to save all the campsites found during one
@@ -775,7 +622,8 @@ used, camply will use a serialized Pickle file.
 ```commandline
 camply \
   campsites \
-  --campground 232064 \
+  --rec-area 14 \
+  --campground -2147483643 \
   --start-date 2023-09-01 \
   --end-date 2023-10-01 \
   --continuous \
@@ -785,7 +633,8 @@ camply \
 ```commandline
 camply \
   campsites \
-  --campground 232064 \
+  --rec-area 14 \
+  --campground -2147483643 \
   --start-date 2023-09-01 \
   --end-date 2023-10-01 \
   --continuous \
@@ -794,197 +643,21 @@ camply \
 
 ### Search for Recreation Areas by Query String
 
-Just need to find what your local Recreation Area ID number is? This simple command allows you to
-search and list recreation areas. It accepts `--search` and `--state` arguments.
+Just need to find what your Recreation Area ID number is? This simple command allows you to
+search and list recreation areas. It accepts a `--search` argument.
 
 ```commandline
-camply recreation-areas --search "Yosemite National Park"
+camply recreation-areas --search "BC Parks"
 ```
 
 ### Look for Specific Campgrounds Within a Recreation Area
 
 Need to get even more specific and search for a particular campground? This search lists campgrounds
-attached to a recreation area id `--rec-area`. It also accepts `--search` and `--state`
-arguments.
+attached to a recreation area id `--rec-area`. It also accepts a `--search` argument.
 
 ```commandline
-camply campgrounds --rec-area 2991
+camply campgrounds --rec-area 14 --search "Banff"
 ```
-
-### Look for Specific Campgrounds by Query String
-
-The below search looks for Fire Lookout Towers to stay in inside of California.
-
-```commandline
-camply campgrounds --search "Fire Tower Lookout" --state CA
-```
-
-### Searching for Tickets and Timed Entries
-
-The [Recreation.gov Tickets, Tours, & Timed-Entry Providers](providers.md#recreationgov-tickets-tours--timed-entry)
-support "campgrounds" that are actually resources like timed entry appointments and tickets
-to recreation activities.
-
-#### Tickets + Tours
-
-Let's say you're going on vacation in Hawaii and you're interested in what hiking tickets are available:
-
-```commandline
-camply campgrounds \
-    --provider RecreationDotGovTicket \
-    --state HI
-```
-
-Nice, there are some great options there. Let's say we've decided on
-the [Haleakala National Park Summit Sunrise Reservations](https://www.recreation.gov/ticket/facility/253731).
-This "campground" has ID #253731. These reservations are hard to snag but they do pop up!
-
-```commandline
-camply campsites \
-  --provider RecreationDotGovTicket \
-  --start-date 2023-06-09 \
-  --end-date 2023-06-10 \
-  --campground 253731 \
-  --search-forever \
-  --notifications email
-```
-
-#### Timed Entry
-
-Let's say you're visiting Oregon and wanting to visit
-the [Lava River Cave](https://www.recreation.gov/timed-entry/10089508). They've recently implemented a Timed Reservation
-System - so we'd use the `RecreationDotGovTimedEntry` provider:
-
-```commandline
-camply campgrounds \
-    --provider RecreationDotGovTimedEntry \
-    --state OR
-```
-
-Using the above command we can see that the campground ID we want is #10089508:
-
-```commandline
-camply campsites \
-  --provider RecreationDotGovTimedEntry \
-  --start-date 2023-06-09 \
-  --end-date 2023-06-10 \
-  --campground 10089508 \
-  --search-forever \
-  --notifications email
-```
-
-#### Using the Daily Providers
-
-You'll also notice that there are alternative daily providers for our tours
-and timed entry providers: `RecreationDotGovTicket` -> `RecreationDotGovDailyTicket` and
-`RecreationDotGovTimedEntry` -> `RecreationDotGovDailyTimedEntry`. These providers search the
-same recreation activities as their non-daily counterparts but there are scenarios where you
-might want to use the daily provider.
-
-When you use the daily provider it issues an API request for each day in your search
-range, instead of once per month with the non-daily providers. This means that you can
-make as many as 31x more API requests compared to the non-daily counterpart. `camply` needs
-to be respectful of recreation.gov so always use the non-daily version when you have a large
-search window.
-
-It's suspected that the non-daily providers return "cached" results and can take longer to reflect
-actual inventory. When you have a small search window, or if you need to use the `--equipment` filtering
-functionality, then you should use the daily provider.
-
-In the following scenario we'll search for tickets to a great attraction,
-the [Keys Ranch Tour](https://www.recreation.gov/ticket/300004/ticket/1040), in Joshua Tree National Park.
-
-Here's how you could search for that and retrieve its campground ID, #300004:
-
-```commandline
-camply campgrounds \
-    --provider RecreationDotGovDailyTicket \
-    --search "Keys Ranch Tour"
-```
-
-Great, now let's search:
-
-```commandline
-camply campsites \
-  --provider RecreationDotGovDailyTicket \
-  --start-date 2023-07-06 \
-  --end-date 2023-07-07 \
-  --campground 300004
-```
-
-Let's take it even a step further, let's say you need 4 spots in their 1:00PM time slot. In this case we can search
-for that timeslot using the `--equipment` option and providing the time and minimum spots needed (`1300` and `4`):
-
-```commandline
-camply campsites \
-  --provider RecreationDotGovDailyTicket \
-  --start-date 2023-07-06 \
-  --end-date 2023-07-07 \
-  --campground 300004 \
-  --equipment 1300 4
-```
-
-Here's another example of searching for a specific time, this time for the timed-entry
-[Tuweep Area Day Use Passes](https://www.recreation.gov/timed-entry/10089462) in Grand Canyon
-National Park (ID #10089462). In this example we're looking for any number of spots in
-their 8:00AM-5:00PM time slot:
-
-```commandline
-camply campsites \
-  --provider RecreationDotGovDailyTimedEntry \
-  --start-date 2023-07-06 \
-  --end-date 2023-07-07 \
-  --campground 10089462 \
-  --equipment 0800 0
-```
-
-### Search ReserveCalifornia
-
-[ReserveCalifornia](providers.md#reservecalifornia) is the online booking provider for California State Parks
-and it works a lot like `RecreationDotGov`.
-
-!!! note
-
-    ReserveCalifornia is one of many providers that use the UseDirect API. The following providers are also supported:
-
-    -   **`AlabamaStateParks`**: Searches on [ReserveAlaPark.com](https://reservealapark.com) for Campsites
-    -   **`ArizonaStateParks`**: Searches on [AZStateParks.com](https://azstateparks.com) for Campsites
-    -   **`FloridaStateParks`**: Searches on [FloridaStateParks.org](https://www.reserve.floridastateparks.org) for Campsites
-    -   **`MinnesotaStateParks`**: Searches on [ReserveMN.usedirect.com](https://reservemn.usedirect.com) for Campsites
-    -   **`MissouriStateParks`**: Searches on [icampmo1.usedirect.com](https://icampmo1.usedirect.com) for Campsites
-    -   **`OhioStateParks`**: Searches on [ReserveOhio.com](https://reserveohio.com) for Campsites
-    -   **`VirginiaStateParks`**: Searches on [ReserveVAParks.com](https://reservevaparks.com) for Campsites
-    -   **`NorthernTerritory`**: Searches the [Australian Northern Territory](https://parkbookings.nt.gov.au) for Campsites
-    -   **`FairfaxCountyParks`**: Searches on [fairfax.usedirect.com](https://fairfax.usedirect.com) for Campsites (Virginia)
-    -   **`MaricopaCountyParks`**: Searches on [MaricopaCountyParks.org](https://maricopacountyparks.org) for Campsites (Arizona)
-    -   **`OregonMetro`**: Searches on [OregonMetro.gov](https://oregonmetro.gov) for Campsites (Portland Metro)
-
-If you wanted to look for recreation areas (groupings of campgrounds):
-
-```commandline
-camply recreation-areas --provider ReserveCalifornia --search "Los Angeles"
-```
-
-If you want to look for more specific campgrounds to search:
-
-```commandline
-camply campgrounds --provider ReserveCalifornia --search "Sonoma Coast"
-```
-
-And finally, searching for a campsite is very similar to [RecreationDotGov](#searching-for-a-campsite):
-
-```commandline
-camply campsites \
-    --provider ReserveCalifornia \
-    --start-date 2023-07-01 \
-    --end-date 2023-08-01 \
-    --rec-area 718 \
-    --weekends
-```
-
-!!! note
-
-    **`ReserveCalifornia`** doesn't yet support searching / filtering by *equipment*.
 
 ### Run camply as a CRON Job
 
@@ -999,7 +672,8 @@ camply to save any campsites it finds between searches so that it only sends you
 
 ```commandline
 camply campsites \
-    --rec-area 2725 \
+    --rec-area 14 \
+    --campground -2147483643 \
     --start-date 2023-07-10 \
     --end-date 2023-07-18 \
     --notifications email \
@@ -1028,7 +702,8 @@ Unless explicitly set otherwise, `WEBHOOK_HEADERS` will have
 
 ```commandline
 camply campsites \
-    --campground 232451 \
+    --rec-area 14 \
+    --campground -2147483643 \
     --start-date 2023-09-10 \
     --end-date 2023-09-13 \
     --notifications webhook
@@ -1041,55 +716,23 @@ under a `campsites` key.
 {
     "campsites": [
         {
-            "campsite_id": 981,
+            "campsite_id": -2147475532,
             "booking_date": "2023-09-12T00:00:00",
             "booking_end_date": "2023-09-13T00:00:00",
             "booking_nights": 1,
-            "campsite_site_name": "C",
-            "campsite_loop_name": "Tent Only Group Area",
-            "campsite_type": "GROUP TENT ONLY AREA NONELECTRIC",
-            "campsite_occupancy": [13, 30],
-            "campsite_use_type": "Overnight",
+            "campsite_site_name": "B12",
+            "campsite_loop_name": "Unknown",
+            "campsite_type": "Unknown",
+            "campsite_occupancy": [1, 6],
+            "campsite_use_type": "N/A",
             "availability_status": "Available",
-            "recreation_area": "Yosemite National Park, CA",
-            "recreation_area_id": 2991,
-            "facility_name": "Hodgdon Meadow Campground",
-            "facility_id": 232451,
-            "booking_url": "https://www.recreation.gov/camping/campsites/981",
-            "permitted_equipment": [
-                {
-                    "equipment_name": "Tent",
-                    "max_length": 0.0
-                },
-                {
-                    "equipment_name": "Large Tent Over 9X12`",
-                    "max_length": 0.0
-                },
-                {
-                    "equipment_name": "Small Tent",
-                    "max_length": 0.0
-                }
-            ],
-            "campsite_attributes": [
-                {
-                    "attribute_category": "site_details",
-                    "attribute_id": 11,
-                    "attribute_name": "Checkin Time",
-                    "attribute_value": "12:00 PM"
-                },
-                {
-                    "attribute_category": "site_details",
-                    "attribute_id": 56,
-                    "attribute_name": "Min Num of People",
-                    "attribute_value": "13"
-                },
-                {
-                    "attribute_category": "site_details",
-                    "attribute_id": 9,
-                    "attribute_name": "Campfire Allowed",
-                    "attribute_value": "Yes"
-                }
-            ]
+            "recreation_area": "Parks Canada",
+            "recreation_area_id": 14,
+            "facility_name": "Banff - Two Jack Lakeside",
+            "facility_id": -2147483643,
+            "booking_url": "https://reservation.pc.gc.ca/create-booking/results?...",
+            "permitted_equipment": null,
+            "campsite_attributes": null
         }
     ],
     "timestamp": "2023-09-10T01:57:00.729918+00:00"

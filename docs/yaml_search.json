@@ -5,7 +5,7 @@
   "properties": {
     "provider": {
       "description": "Campsite provider",
-      "default": "RecreationDotGov",
+      "default": "GoingToCamp",
       "allOf": [
         {
           "$ref": "#/definitions/ProviderEnum"
@@ -16,22 +16,22 @@
       "title": "Recreation Area",
       "anyOf": [
         {
+          "type": "integer"
+        },
+        {
           "type": "array",
           "items": {
             "type": "integer"
           }
         },
         {
-          "type": "integer"
+          "type": "string"
         },
         {
           "type": "array",
           "items": {
             "type": "string"
           }
-        },
-        {
-          "type": "string"
         }
       ]
     },
@@ -39,22 +39,22 @@
       "title": "Campgrounds",
       "anyOf": [
         {
+          "type": "integer"
+        },
+        {
           "type": "array",
           "items": {
             "type": "integer"
           }
         },
         {
-          "type": "integer"
+          "type": "string"
         },
         {
           "type": "array",
           "items": {
             "type": "string"
           }
-        },
-        {
-          "type": "string"
         }
       ]
     },
@@ -62,22 +62,22 @@
       "title": "Campsites",
       "anyOf": [
         {
+          "type": "integer"
+        },
+        {
           "type": "array",
           "items": {
             "type": "integer"
           }
         },
         {
-          "type": "integer"
+          "type": "string"
         },
         {
           "type": "array",
           "items": {
             "type": "string"
           }
-        },
-        {
-          "type": "string"
         }
       ]
     },
@@ -145,13 +145,13 @@
       "default": "silent",
       "anyOf": [
         {
+          "type": "string"
+        },
+        {
           "type": "array",
           "items": {
             "type": "string"
           }
-        },
-        {
-          "type": "string"
         }
       ]
     },
@@ -223,25 +223,7 @@
       "title": "ProviderEnum",
       "description": "Campsite Provider Names",
       "enum": [
-        "RecreationDotGov",
-        "Yellowstone",
-        "GoingToCamp",
-        "ReserveCalifornia",
-        "AlabamaStateParks",
-        "ArizonaStateParks",
-        "FloridaStateParks",
-        "MinnesotaStateParks",
-        "MissouriStateParks",
-        "OhioStateParks",
-        "VirginiaStateParks",
-        "NorthernTerritory",
-        "FairfaxCountyParks",
-        "MaricopaCountyParks",
-        "OregonMetro",
-        "RecreationDotGovTicket",
-        "RecreationDotGovTimedEntry",
-        "RecreationDotGovDailyTicket",
-        "RecreationDotGovDailyTimedEntry"
+        "GoingToCamp"
       ],
       "type": "string"
     }

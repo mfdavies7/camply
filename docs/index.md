@@ -9,8 +9,8 @@
 
 **`camply`**, the campsite finder ⛺️, is a tool to help you book a campsite online. Finding
 reservations at sold out campgrounds can be tough. That's where camply comes in. It searches
-thousands of campgrounds across the ~~USA~~ world via the APIs of booking services like
-[recreation.gov](https://recreation.gov). It continuously checks for cancellations and
+Canadian national, provincial and regional parks via the [GoingToCamp](https://goingtocamp.com)
+booking platform. It continuously checks for cancellations and
 availabilities to pop up - once a campsite becomes available, camply sends you a notification
 to book your spot!
 
@@ -35,10 +35,7 @@ to book your spot!
     - [PyPI](installation.md#pypi)
     - [Docker](installation.md#docker)
 - [Providers](providers.md)
-    - [RecreationDotGov](providers.md#recreationgov)
-    - [Yellowstone](providers.md#yellowstone)
     - [GoingToCamp](providers.md#goingtocamp)
-    - [RecDotGov Tours + Tickets + Timed Entry](providers.md#recreationgov-tickets-tours-timed-entry)
 - [Command Line Usage](command_line_usage.md)
     - [Simple Examples](command_line_usage.md#simple-examples)
     - [providers](command_line_usage.md#providers)
@@ -47,11 +44,10 @@ to book your spot!
     - [campgrounds](command_line_usage.md#campgrounds)
     - [configure](command_line_usage.md#configure)
     - [test-notifications](command_line_usage.md#test-notifications)
-    - [list-campsites](command_line_usage.md#list-campsites)
     - [tui](command_line_usage.md#tui)
     - [Examples](command_line_usage.md#examples)
+        - [Finding Campground IDs](command_line_usage.md#finding-campground-ids)
         - [Searching for a Campsite](command_line_usage.md#searching-for-a-campsite)
-        - [Searching for a Campsite by Campground ID](command_line_usage.md#searching-for-a-campsite-by-campground-id)
         - [Searching for a Specific Campsite by ID](command_line_usage.md#searching-for-a-specific-campsite-by-id)
         - [Continuously Searching for A Campsite](command_line_usage.md#continuously-searching-for-a-campsite)
         - [Searching Across Multiple Time Windows](command_line_usage.md#searching-across-multiple-time-windows)
@@ -63,21 +59,11 @@ to book your spot!
         - [Send a Notification Using Apprise-Compatible Services](command_line_usage.md#send-a-notification-using-apprise-compatible-services)
         - [Look for Weekend Campsite Availabilities](command_line_usage.md#look-for-weekend-campsite-availabilities)
         - [Look for Consecutive Nights at the Same Campsite](command_line_usage.md#look-for-consecutive-nights-at-the-same-campsite)
-        - [Look for a Campsite Inside of Yellowstone](command_line_usage.md#look-for-a-campsite-inside-of-yellowstone)
-        - [Look for a Campsite from GoingToCamp](command_line_usage.md#look-for-a-campsite-from-goingtocamp)
-        - [Searching GoingToCamp Using Equipment](command_line_usage.md#searching-goingtocamp-using-equipment)
-        - [Look for a Campsite Across Multiple Recreation areas](command_line_usage.md#look-for-a-campsite-across-multiple-recreation-areas)
+        - [Searching Using Equipment](command_line_usage.md#searching-using-equipment)
         - [Using a YAML Configuration file to search for campsites](command_line_usage.md#using-a-yaml-configuration-file-to-search-for-campsites)
-        - [Searching for a Campsite That Fits Your Equipment](command_line_usage.md#searching-for-a-campsite-that-fits-your-equipment)
         - [Saving the Results of a Search](command_line_usage.md#saving-the-results-of-a-search)
         - [Search for Recreation Areas by Query String](command_line_usage.md#search-for-recreation-areas-by-query-string)
         - [Look for Specific Campgrounds Within a Recreation Area](command_line_usage.md#look-for-specific-campgrounds-within-a-recreation-area)
-        - [Look for Specific Campgrounds by Query String](command_line_usage.md#look-for-specific-campgrounds-by-query-string)
-        - [Searching for Tickets and Timed Entries](command_line_usage.md#searching-for-tickets-and-timed-entries)
-            - [Tickets + Tours](command_line_usage.md#tickets-tours)
-            - [Timed Entry](command_line_usage.md#timed-entry)
-            - [Using the Daily Providers](command_line_usage.md#using-the-daily-providers)
-        - [Search ReserveCalifornia](command_line_usage.md#search-reservecalifornia)
         - [Run camply as a CRON Job](command_line_usage.md#run-camply-as-a-cron-job)
         - [Send a Webhook Notification](command_line_usage.md#send-a-webhook-notification)
 - [How to Run Camply](how_to_run.md#how-to-run-camply)
@@ -88,15 +74,10 @@ to book your spot!
         - [search-once](how_to_run.md#search-once)
     - [Running in Docker](how_to_run.md#running-in-docker)
         - [Environment Variables](how_to_run.md#environment-variables)
-- [Finding Recreation Areas IDs and Campground IDs To Search Without Using the Command Line](command_line_usage.md#finding-recreation-areas-ids-and-campground-ids-to-search-without-using-the-command-line)
 - [Object-Oriented Usage (Python)](python.md)
-    - [Search for a Recreation.gov Campsite](python.md#search-for-a-recreationgov-campsite)
-    - [Continuously Search for Recreation.gov Campsites](python.md#continuously-search-for-recreationgov-campsites)
+    - [Search for a GoingToCamp Campsite](python.md#search-for-a-goingtocamp-campsite)
+    - [Continuously Search for GoingToCamp Campsites](python.md#continuously-search-for-goingtocamp-campsites)
 - [Dependencies](dependencies.md)
-
-<br/>
-
-Recreation data provided by [**Recreation.gov**](https://ridb.recreation.gov/)
 
 ---
 
