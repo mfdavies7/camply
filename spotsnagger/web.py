@@ -4,7 +4,6 @@ A tiny browser UI for non-technical users: pick a park, dates and nights, see op
 Runs on the standard library HTTP server, bound to localhost only.
 """
 
-import datetime
 import json
 import logging
 import webbrowser
@@ -12,7 +11,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from typing import Any, Dict, List, Tuple
 from urllib.parse import parse_qs, urlparse
 
-from spotsnagger.containers import SearchWindow
+from spotsnagger import saved
 from spotsnagger.providers import Aspira, GoingToCamp
 from spotsnagger.providers.aspira.aspira_provider import (
     BACKCOUNTRY,
@@ -26,14 +25,17 @@ from spotsnagger.providers.going_to_camp.going_to_camp_provider import (
     booking_category_name,
 )
 from spotsnagger.providers.going_to_camp.rec_areas import RECREATION_AREAS
-from spotsnagger.search.base_search import BaseCampingSearch
-from spotsnagger.search.search_aspira import SearchAspira
-from spotsnagger.search.search_going_to_camp import SearchGoingToCamp
+from spotsnagger.trip import (
+    ASPIRA_PREFIX,
+    ProviderAvailability,
+    Trip,
+    find_itineraries,
+    make_search,
+    parse_park,
+    parse_search_body,
+)
 
 logger = logging.getLogger(__name__)
-
-# Park IDs are GoingToCamp ints, or "aspira-<id>" (Aspira IDs overlap GoingToCamp's)
-ASPIRA_PREFIX = "aspira-"
 
 RESULT_FIELDS = {
     "facility_name",
@@ -43,15 +45,6 @@ RESULT_FIELDS = {
     "booking_nights",
     "booking_url",
 }
-
-
-def _parse_park(rec_area: Any) -> Tuple[bool, int]:
-    """
-    (is it an Aspira park, its rec area ID) from a web UI park ID
-    """
-    value = str(rec_area)
-    is_aspira = value.startswith(ASPIRA_PREFIX)
-    return is_aspira, int(value[len(ASPIRA_PREFIX) :] if is_aspira else value)
 
 
 def list_parks() -> List[Dict[str, Any]]:
@@ -81,7 +74,7 @@ def list_booking_categories(rec_area: Any) -> List[Dict[str, Any]]:
     """
     Reservation services of one park (Campsite, Backcountry, Roofed, ...)
     """
-    is_aspira, rec_area = _parse_park(rec_area)
+    is_aspira, rec_area = parse_park(rec_area)
     if is_aspira:
         host, contract, _ = ASPIRA_RECREATION_AREAS[rec_area]
         interest = {v: k for k, v in INTERESTS.items()}
@@ -114,7 +107,7 @@ def list_campgrounds(rec_area: Any, booking_category: int = 0) -> List[Dict[str,
     """
     Campgrounds within one park offering a reservation service (calls the API)
     """
-    is_aspira, rec_area = _parse_park(rec_area)
+    is_aspira, rec_area = parse_park(rec_area)
     if is_aspira:
         host, contract, _ = ASPIRA_RECREATION_AREAS[rec_area]
         page = (
@@ -148,46 +141,29 @@ def search(body: Dict[str, Any]) -> List[Dict[str, Any]]:
     """
     Run a single (non-continuous) campsite search from the form fields
     """
-    is_aspira, rec_area = _parse_park(body["rec_area"])
-    known = (
-        ASPIRA_RECREATION_AREAS.keys()
-        if is_aspira
-        else {a.recreation_area_id for a in RECREATION_AREAS.values()}
-    )
-    if rec_area not in known:
-        raise ValueError("Unknown park")
-    start = datetime.date.fromisoformat(body["start_date"])
-    end = datetime.date.fromisoformat(body["end_date"])
-    nights = int(body.get("nights") or 1)
-    if end <= start:
-        raise ValueError("The end date must be after the start date")
-    if not 1 <= nights <= (end - start).days:
-        raise ValueError("Nights must fit between the start and end dates")
-    campground = str(body.get("campground") or "")
-    if not campground:
-        # GoingToCamp and Aspira only allow searching one campground at a time
-        raise ValueError("Please choose a campground")
-    window = SearchWindow(start_date=start, end_date=end)
-    camp_search: BaseCampingSearch
-    if is_aspira:
-        camp_search = SearchAspira(
-            search_window=window,
-            recreation_area=[rec_area],
-            campgrounds=[int(campground)],
-            nights=nights,
-            booking_category_id=int(body.get("booking_category") or 0),
-        )
-    else:
-        camp_search = SearchGoingToCamp(
-            search_window=window,
-            recreation_area=[rec_area],
-            campgrounds=[campground],
-            nights=nights,
-            booking_category_id=int(body.get("booking_category") or 0),
-        )
+    camp_search = make_search(**parse_search_body(body))
     found = camp_search.get_matching_campsites(log=False)
     results = [c.dict(include=RESULT_FIELDS) for c in found]
     return sorted(results, key=lambda r: (r["booking_date"], r["facility_name"]))
+
+
+def search_trip(body: Dict[str, Any]) -> List[Dict[str, Any]]:
+    """
+    Run a single trip search; the body is a Trip (see spotsnagger.trip)
+    """
+    trip = Trip.parse_obj(body)
+    return [
+        {
+            "legs": [
+                {
+                    **leg.dict(exclude={"sites"}),
+                    "sites": [s.dict(include=RESULT_FIELDS) for s in leg.sites],
+                }
+                for leg in itinerary.legs
+            ]
+        }
+        for itinerary in find_itineraries(trip, ProviderAvailability())
+    ]
 
 
 def handle_api(method: str, path: str, query: str, body: bytes) -> Tuple[int, Any]:
@@ -204,6 +180,10 @@ def handle_api(method: str, path: str, query: str, body: bytes) -> Tuple[int, An
             int(parse_qs(query).get("booking_category", ["0"])[0]),
         ),
         ("POST", "/api/search"): lambda: search(json.loads(body or b"{}")),
+        ("POST", "/api/trip"): lambda: search_trip(json.loads(body or b"{}")),
+        ("GET", "/api/saved"): saved.list_saved,
+        ("POST", "/api/saved"): lambda: saved.save(**json.loads(body or b"{}")),
+        ("DELETE", "/api/saved"): lambda: saved.delete(parse_qs(query)["name"][0]),
     }
     route = routes.get((method, path))
     if route is None:
@@ -244,6 +224,9 @@ class _Handler(BaseHTTPRequestHandler):
     def do_POST(self) -> None:
         self._route("POST")
 
+    def do_DELETE(self) -> None:
+        self._route("DELETE")
+
     def log_message(self, format: str, *args: Any) -> None:
         logger.debug(format, *args)
 
@@ -279,24 +262,60 @@ PAGE = """<!doctype html>
   main { max-width:720px; margin:0 auto; padding:24px 16px 64px; }
   h1 { margin:0 0 4px; font-size:1.8rem; }
   p.lead { margin:0 0 24px; color:var(--muted); }
-  form, .site { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:20px; }
+  form, .site, .trip { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:20px; }
+  form[hidden] { display:none; }
   label { display:block; font-weight:600; margin:16px 0 6px; }
-  label:first-child { margin-top:0; }
   .hint { font-weight:400; color:var(--muted); font-size:.9rem; }
   select, input { width:100%; padding:10px 12px; font:inherit; color:inherit; background:var(--bg);
                   border:1px solid var(--line); border-radius:8px; }
+  input[type=checkbox] { width:auto; margin:0 6px 0 0; }
   .row { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
   button { margin-top:20px; width:100%; padding:14px; font:inherit; font-weight:700; color:#fff;
            background:var(--accent); border:0; border-radius:8px; cursor:pointer; }
   @media (prefers-color-scheme: dark) { button { color:#0d140e; } }
+  button.secondary { width:auto; margin-top:12px; padding:8px 14px; color:var(--accent); background:none;
+                     border:1px solid var(--accent); font-weight:600; }
+  button.link { width:auto; margin:8px 0 0; padding:0; color:var(--err); background:none; font-weight:600; font-size:.9rem; }
   button:disabled { opacity:.6; cursor:wait; }
+  .tabs { display:flex; gap:8px; margin-bottom:16px; }
+  .tabs button { margin:0; flex:1; padding:10px; color:var(--accent); background:var(--card); border:1px solid var(--line); }
+  .tabs button[aria-selected=true] { color:var(--bg); background:var(--accent); border-color:var(--accent); }
+  fieldset { margin:16px 0 0; padding:12px 16px 16px; border:1px solid var(--line); border-radius:10px; }
+  legend { font-weight:700; padding:0 6px; }
+  .alt { margin-top:12px; padding-top:4px; border-top:1px dashed var(--line); }
+  .alt:first-child { margin-top:0; padding-top:0; border-top:0; }
+  .alt-or { margin:12px 0 0; color:var(--muted); font-size:.9rem; font-weight:600; }
+  .days { display:flex; flex-wrap:wrap; gap:4px 16px; }
+  .days label { display:flex; align-items:center; margin:0; font-weight:400; }
+  details { margin-top:20px; }
+  summary { cursor:pointer; font-weight:700; }
+  .check { display:flex; align-items:center; font-weight:400; }
   #status { margin:24px 0 12px; color:var(--muted); }
   #status.error { color:var(--err); font-weight:600; }
   .site { display:flex; justify-content:space-between; align-items:center; gap:12px; margin-bottom:10px; padding:14px 16px; }
   .site strong { display:block; }
-  .site span { color:var(--muted); font-size:.9rem; }
-  .site a { flex:none; padding:8px 16px; border-radius:8px; background:var(--accent); color:var(--bg);
+  .site span, .leg span { color:var(--muted); font-size:.9rem; }
+  .site a, .leg a { flex:none; padding:8px 16px; border-radius:8px; background:var(--accent); color:var(--bg);
             text-decoration:none; font-weight:700; }
+  .trip { margin-bottom:12px; padding:14px 16px; }
+  .trip h2 { margin:0 0 8px; font-size:1.1rem; }
+  .leg { padding:10px 0; border-top:1px solid var(--line); }
+  .leg ul { list-style:none; margin:6px 0 0; padding:0; }
+  .leg li { display:flex; justify-content:space-between; align-items:center; gap:12px; margin-top:6px; }
+  .leg a { padding:4px 12px; font-size:.9rem; }
+  #saved { margin:0 0 16px; padding:14px 16px; background:var(--card); border:1px solid var(--line); border-radius:12px; }
+  #saved[hidden], .saved-item[hidden], #saved-none[hidden] { display:none; }
+  #saved summary { font-size:1.1rem; }
+  #saved-filter { margin:12px 0 4px; }
+  #saved-none { margin:8px 0 0; color:var(--muted); }
+  .saved-item { display:flex; justify-content:space-between; align-items:center; gap:12px; padding:8px 0; border-top:1px solid var(--line); }
+  .saved-item:first-of-type { border-top:0; }
+  .saved-item span { display:block; color:var(--muted); font-size:.9rem; }
+  .saved-item div:last-child { display:flex; gap:12px; align-items:center; flex:none; }
+  .saved-item button { margin:0; }
+  .buttons { display:flex; gap:12px; align-items:flex-end; }
+  .buttons button[type=submit] { flex:1; }
+  .buttons button.secondary { padding:14px; }
   .site-link { display:inline-block; margin-top:4px; font-size:.9rem; color:var(--accent); }
   .site-link[hidden] { display:none; }
   select:disabled, input:disabled { opacity:.5; cursor:not-allowed; }
@@ -311,20 +330,19 @@ PAGE = """<!doctype html>
 <body>
 <main>
   <h1>SpotSnagger 2.0</h1>
-  <p class="lead">Find open campsites at Canadian parks. Pick a park and your dates, then press Search.</p>
+  <p class="lead">Find open campsites at Canadian parks. Search one campground, or plan a trip across several with no gaps between stays.</p>
+  <details id="saved" hidden>
+    <summary>Saved searches <span class="hint" id="saved-count"></span></summary>
+    <input type="search" id="saved-filter" placeholder="Search by name, type or date" aria-label="Search saved searches">
+    <div id="saved-list"></div>
+    <p id="saved-none" hidden>No saved searches match.</p>
+  </details>
+  <div class="tabs" role="tablist">
+    <button type="button" role="tab" id="tab-single" aria-controls="form" aria-selected="true">One campground</button>
+    <button type="button" role="tab" id="tab-trip" aria-controls="trip-form" aria-selected="false">Trip (several stops)</button>
+  </div>
   <form id="form">
-    <label for="park">Park</label>
-    <select id="park" required disabled><option value="">Loading parks&hellip;</option></select>
-    <a class="site-link" id="park-link" target="_blank" rel="noopener" hidden>Open on the booking site</a>
-
-    <label for="category">Type of stay <span class="hint">(campsite, backcountry, cabin&hellip;)</span></label>
-    <select id="category" required disabled><option value="">Choose a park first</option></select>
-    <a class="site-link" id="category-link" target="_blank" rel="noopener" hidden>Open on the booking site</a>
-
-    <label for="campground">Campground</label>
-    <select id="campground" required disabled><option value="">Choose a park first</option></select>
-    <a class="site-link" id="campground-link" target="_blank" rel="noopener" hidden>Open on the booking site</a>
-
+    <div id="single-picker"></div>
     <div class="row">
       <div><label for="start">Search Start Date</label><input type="date" id="start" required></div>
       <div><label for="end">Search End Date</label><input type="date" id="end" required></div>
@@ -333,8 +351,39 @@ PAGE = """<!doctype html>
     <label for="nights">Nights in a row <span class="hint">(at least this many)</span></label>
     <input type="number" id="nights" min="1" value="1" required>
 
-    <button id="go" type="submit" disabled>Search</button>
+    <div class="buttons">
+      <button type="submit" disabled>Search</button>
+      <button type="button" class="secondary" id="save-search">Save</button>
+    </div>
   </form>
+
+  <form id="trip-form" hidden>
+    <label>When could you go? <span class="hint">(the trip starts and ends inside one of these ranges)</span></label>
+    <div id="windows"></div>
+    <button type="button" class="secondary" id="add-window">Add another date range</button>
+
+    <div id="stops"></div>
+    <button type="button" class="secondary" id="add-stop">Add a stop</button>
+
+    <details>
+      <summary>More options</summary>
+      <label class="check"><input type="checkbox" id="any-order"> Visit the stops in any order</label>
+      <label>Trip can only start on <span class="hint">(leave all unticked for any day)</span></label>
+      <div class="days" id="start-days"></div>
+      <div class="row">
+        <div><label for="min-total">Fewest nights in total</label><input type="number" id="min-total" min="1" placeholder="Any"></div>
+        <div><label for="max-total">Most nights in total</label><input type="number" id="max-total" min="1" placeholder="Any"></div>
+      </div>
+      <label for="max-results">Show at most this many trips</label>
+      <input type="number" id="max-results" min="1" max="500" value="25">
+    </details>
+
+    <div class="buttons">
+      <button type="submit" disabled>Find trips</button>
+      <button type="button" class="secondary" id="save-trip">Save</button>
+    </div>
+  </form>
+
   <div id="loading" role="status" aria-live="polite" hidden>
     <div class="spinner" aria-hidden="true"></div><span id="loading-text"></span>
   </div>
@@ -344,28 +393,36 @@ PAGE = """<!doctype html>
 <script>
 const $ = (id) => document.getElementById(id);
 const today = new Date().toISOString().slice(0, 10);
-$("start").min = $("end").min = today;
-
-// Keep end after start (the end date is checkout, so it must be at least a day later)
-// and nights within 1..nights in the window. ISO date strings compare correctly as text.
 const DAY = 86400000;
-function syncDates() {
-  const start = $("start").value, end = $("end"), nights = $("nights");
-  if (!start) return;
-  const minEnd = new Date(Date.parse(start) + DAY).toISOString().slice(0, 10);
-  end.min = minEnd;
-  if (!end.value || end.value < minEnd) end.value = minEnd;
-  const maxNights = Math.round((Date.parse(end.value) - Date.parse(start)) / DAY);
-  nights.max = maxNights;
-  nights.value = Math.min(Math.max(parseInt(nights.value, 10) || 1, 1), maxNights);
+const addDays = (iso, n) => new Date(Date.parse(iso) + n * DAY).toISOString().slice(0, 10);
+let uid = 0;
+const nextId = () => "f" + (++uid);
+
+// Keep end after start (the end date is checkout, so it must be at least a day later).
+// ISO date strings compare correctly as text.
+function linkDates(start, end, after) {
+  start.min = end.min = today;
+  start.addEventListener("change", () => {
+    if (!start.value) return;
+    end.min = addDays(start.value, 1);
+    if (!end.value || end.value < end.min) end.value = end.min;
+    if (after) after();
+  });
+  end.addEventListener("change", () => after && after());
 }
-["start", "end", "nights"].forEach((id) => $(id).addEventListener("change", syncDates));
+linkDates($("start"), $("end"), () => {
+  const nights = $("nights"), max = Math.round((Date.parse($("end").value) - Date.parse($("start").value)) / DAY);
+  nights.max = max;
+  nights.value = Math.min(Math.max(parseInt(nights.value, 10) || 1, 1), max);
+});
+$("nights").addEventListener("change", () => $("start").dispatchEvent(new Event("change")));
 
 let pending = 0;  // overlapping requests (e.g. park change chains category -> campground)
 function setPending(delta) {
   pending += delta;
   $("loading").hidden = !pending;
-  $("go").disabled = pending > 0;  // nothing to submit until every dependent list has loaded
+  // nothing to submit until every dependent list has loaded
+  document.querySelectorAll("button[type=submit]").forEach((b) => { b.disabled = pending > 0; });
 }
 async function api(path, options, message) {
   $("loading-text").textContent = message;
@@ -389,79 +446,214 @@ function option(value, text, url) {
   if (url) o.dataset.url = url;
   return o;
 }
-// Each list shows a link to the chosen item's page on the real booking site
-["park", "category", "campground"].forEach((id) => {
-  const sync = () => {
-    const url = $(id).selectedOptions[0]?.dataset.url;
-    $(id + "-link").hidden = !url;
-    if (url) $(id + "-link").href = url;
+
+let parksRequest = null;
+const loadParks = () => parksRequest || (parksRequest = api("/api/parks", undefined, "Loading parks…"));
+
+// Park -> type of stay -> campground, each with a link to the real booking site
+function makePicker() {
+  const wrap = document.createElement("div");
+  function field(text, hint) {
+    const id = nextId(), label = document.createElement("label"), sel = document.createElement("select");
+    label.htmlFor = sel.id = id;
+    label.textContent = text;
+    if (hint) { const h = document.createElement("span"); h.className = "hint"; h.textContent = " " + hint; label.append(h); }
+    sel.required = true; sel.disabled = true;
+    const link = document.createElement("a");
+    link.className = "site-link"; link.target = "_blank"; link.rel = "noopener"; link.hidden = true;
+    link.textContent = "Open on the booking site";
+    const sync = () => {
+      const url = sel.selectedOptions[0]?.dataset.url;
+      link.hidden = !url;
+      if (url) link.href = url;
+    };
+    sel.addEventListener("change", sync);
+    new MutationObserver(sync).observe(sel, { childList: true });
+    wrap.append(label, sel, link);
+    return sel;
+  }
+  const park = field("Park"), cat = field("Type of stay", "(campsite, backcountry, cabin…)"), cg = field("Campground");
+  park.append(option("", "Loading parks…"));
+  cat.append(option("", "Choose a park first"));
+  cg.append(option("", "Choose a park first"));
+  loadParks().then((parks) => {
+    park.replaceChildren(option("", "Choose a park"),
+      ...parks.map((p) => option(p.id, p.name + " (" + p.location + ")", p.url)));
+    park.disabled = false;
+  }).catch((e) => {
+    park.replaceChildren(option("", "Couldn't load parks"));
+    setStatus(e.message, true);
+  });
+  park.addEventListener("change", async () => {
+    cat.disabled = cg.disabled = true;
+    cg.replaceChildren(option("", "Choose a type of stay first"));
+    if (!park.value) { cat.replaceChildren(option("", "Choose a park first")); return; }
+    cat.replaceChildren(option("", "Loading types of stay…"));
+    try {
+      const list = await api("/api/booking_categories?rec_area=" + encodeURIComponent(park.value),
+                             undefined, "Loading types of stay…");
+      cat.replaceChildren(option("", "Choose a type of stay"), ...list.map((c) => option(c.id, c.name, c.url)));
+      cat.disabled = false;
+      if (list.some((c) => c.id === 0)) { cat.value = "0"; cat.dispatchEvent(new Event("change")); }
+    } catch (e) {
+      cat.replaceChildren(option("", "Couldn't load types of stay"));
+      setStatus(e.message, true);
+    }
+  });
+  cat.addEventListener("change", async () => {
+    cg.disabled = true;
+    if (!cat.value) { cg.replaceChildren(option("", "Choose a type of stay first")); return; }
+    cg.replaceChildren(option("", "Loading campgrounds…"));
+    try {
+      const list = await api("/api/campgrounds?rec_area=" + encodeURIComponent(park.value) +
+                             "&booking_category=" + encodeURIComponent(cat.value),
+                             undefined, "Loading campgrounds…");
+      cg.replaceChildren(option("", "Choose a campground"), ...list.map((c) => option(c.id, c.name, c.url)));
+      cg.disabled = false;
+    } catch (e) {
+      cg.replaceChildren(option("", "Couldn't load campgrounds"));
+      setStatus(e.message, true);
+    }
+  });
+  wrap.value = () => ({ park: park.value, booking_category: cat.value, campground: cg.value,
+                        name: cg.selectedOptions[0]?.textContent });
+  return wrap;
+}
+
+const singlePicker = makePicker();
+$("single-picker").append(singlePicker);
+
+// Tabs
+function showTab(trip) {
+  $("tab-single").setAttribute("aria-selected", String(!trip));
+  $("tab-trip").setAttribute("aria-selected", String(trip));
+  $("form").hidden = trip;
+  $("trip-form").hidden = !trip;
+  $("results").replaceChildren();
+  setStatus("");
+}
+$("tab-single").addEventListener("click", () => showTab(false));
+$("tab-trip").addEventListener("click", () => showTab(true));
+
+// Trip form: date ranges
+function removeButton(text, onClick) {
+  const b = document.createElement("button");
+  b.type = "button"; b.className = "link"; b.textContent = text;
+  b.addEventListener("click", onClick);
+  return b;
+}
+function addWindow() {
+  const row = document.createElement("div");
+  row.className = "window";
+  const grid = document.createElement("div");
+  grid.className = "row";
+  const inputs = ["Earliest arrival", "Latest checkout"].map((text) => {
+    const div = document.createElement("div"), label = document.createElement("label"), input = document.createElement("input");
+    label.htmlFor = input.id = nextId(); label.textContent = text;
+    input.type = "date"; input.required = true;
+    div.append(label, input); grid.append(div);
+    return input;
+  });
+  linkDates(inputs[0], inputs[1]);
+  row.append(grid);
+  if ($("windows").children.length) row.append(removeButton("Remove this date range", () => row.remove()));
+  row.value = () => ({ start_date: inputs[0].value, end_date: inputs[1].value });
+  $("windows").append(row);
+}
+$("add-window").addEventListener("click", addWindow);
+
+// Trip form: stops, each with one or more alternative locations
+function renumberStops() {
+  [...$("stops").children].forEach((s, i) => { s.querySelector("legend").textContent = "Stop " + (i + 1); });
+}
+function numberField(text, hint, value, min) {
+  const div = document.createElement("div"), label = document.createElement("label"), input = document.createElement("input");
+  label.htmlFor = input.id = nextId(); label.textContent = text;
+  if (hint) { const h = document.createElement("span"); h.className = "hint"; h.textContent = " " + hint; label.append(h); }
+  input.type = "number"; input.min = min; input.value = value; input.required = true;
+  div.append(label, input);
+  return [div, input];
+}
+function addStop() {
+  const stop = document.createElement("fieldset");
+  stop.className = "stop";
+  const legend = document.createElement("legend");
+  const alts = document.createElement("div");
+  function addAlt() {
+    const alt = document.createElement("div");
+    alt.className = "alt";
+    if (alts.children.length) {
+      const or = document.createElement("p"); or.className = "alt-or"; or.textContent = "or";
+      alt.append(or);
+    }
+    const picker = makePicker();
+    alt.append(picker);
+    if (alts.children.length) alt.append(removeButton("Remove this alternative", () => alt.remove()));
+    alt.value = picker.value;
+    alts.append(alt);
+  }
+  addAlt();
+  const addAltButton = document.createElement("button");
+  addAltButton.type = "button"; addAltButton.className = "secondary";
+  addAltButton.textContent = "Add an alternative campground";
+  addAltButton.addEventListener("click", addAlt);
+  const grid = document.createElement("div");
+  grid.className = "row";
+  const [minDiv, min] = numberField("Fewest nights", "(0 = optional stop)", 1, 0);
+  const [maxDiv, max] = numberField("Most nights", "", 1, 1);
+  min.addEventListener("change", () => { if (+max.value < +min.value) max.value = Math.max(+min.value, 1); });
+  max.addEventListener("change", () => { if (+max.value < +min.value) min.value = max.value; });
+  grid.append(minDiv, maxDiv);
+  stop.append(legend, alts, addAltButton, grid);
+  if ($("stops").children.length) stop.append(removeButton("Remove this stop", () => { stop.remove(); renumberStops(); }));
+  stop.value = () => {
+    const locations = [...alts.children].map((a) => a.value());
+    return {
+      name: locations[0].name,
+      min_nights: +min.value, max_nights: +max.value,
+      locations: locations.map((l) => ({ park: l.park, booking_category: +l.booking_category, campgrounds: [l.campground] })),
+    };
   };
-  $(id).addEventListener("change", sync);
-  new MutationObserver(sync).observe($(id), { childList: true });
+  $("stops").append(stop);
+  renumberStops();
+}
+$("add-stop").addEventListener("click", addStop);
+["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].forEach((d, i) => {
+  const label = document.createElement("label"), box = document.createElement("input");
+  box.type = "checkbox"; box.value = i;
+  label.append(box, d);
+  $("start-days").append(label);
 });
+addWindow();
+addStop();
+addStop();
 
-api("/api/parks", undefined, "Loading parks…").then((parks) => {
-  $("park").replaceChildren(option("", "Choose a park"),
-    ...parks.map((p) => option(p.id, p.name + " (" + p.location + ")", p.url)));
-  $("park").disabled = false;
-}).catch((e) => {
-  $("park").replaceChildren(option("", "Couldn't load parks"));
-  setStatus(e.message, true);
-});
+// Results
+const fmt = (d) => new Date(d + (d.length === 10 ? "T00:00" : "")).toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" });
+const plural = (n, word) => n + " " + word + (n === 1 ? "" : "s");
+function bookLink(url) {
+  const a = document.createElement("a");
+  a.href = url; a.target = "_blank"; a.rel = "noopener"; a.textContent = "Book";
+  return a;
+}
 
-$("park").addEventListener("change", async () => {
-  const cat = $("category");
-  cat.disabled = true;
-  $("campground").replaceChildren(option("", "Choose a type of stay first"));
-  $("campground").disabled = true;
-  if (!$("park").value) { cat.replaceChildren(option("", "Choose a park first")); return; }
-  cat.replaceChildren(option("", "Loading types of stay…"));
-  try {
-    const list = await api("/api/booking_categories?rec_area=" + encodeURIComponent($("park").value),
-                           undefined, "Loading types of stay…");
-    cat.replaceChildren(option("", "Choose a type of stay"), ...list.map((c) => option(c.id, c.name, c.url)));
-    cat.disabled = false;
-    if (list.some((c) => c.id === 0)) { cat.value = "0"; cat.dispatchEvent(new Event("change")); }
-  } catch (e) {
-    cat.replaceChildren(option("", "Couldn't load types of stay"));
-    setStatus(e.message, true);
-  }
-});
-
-$("category").addEventListener("change", async () => {
-  const cg = $("campground");
-  cg.disabled = true;
-  if (!$("category").value) { cg.replaceChildren(option("", "Choose a type of stay first")); return; }
-  cg.replaceChildren(option("", "Loading campgrounds…"));
-  try {
-    const list = await api("/api/campgrounds?rec_area=" + encodeURIComponent($("park").value) +
-                           "&booking_category=" + encodeURIComponent($("category").value),
-                           undefined, "Loading campgrounds…");
-    cg.replaceChildren(option("", "Choose a campground"), ...list.map((c) => option(c.id, c.name, c.url)));
-    cg.disabled = false;
-  } catch (e) {
-    cg.replaceChildren(option("", "Couldn't load campgrounds"));
-    setStatus(e.message, true);
-  }
-});
-
-$("form").addEventListener("submit", async (event) => {
-  event.preventDefault();
+function searchBody() {
+  const where = singlePicker.value();
+  return {
+    rec_area: where.park, booking_category: where.booking_category, campground: where.campground,
+    start_date: $("start").value, end_date: $("end").value, nights: $("nights").value,
+  };
+}
+$("form").addEventListener("submit", (event) => { event.preventDefault(); runSearch(searchBody()); });
+async function runSearch(body) {
   $("results").replaceChildren();
   setStatus("");
   try {
     const sites = await api("/api/search", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        rec_area: $("park").value, booking_category: $("category").value,
-        campground: $("campground").value,
-        start_date: $("start").value, end_date: $("end").value, nights: $("nights").value,
-      }),
+      method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body),
     }, "Searching for open campsites… this can take a minute.");
-    setStatus(sites.length ? sites.length + " open campsite" + (sites.length === 1 ? "" : "s") + " found."
+    setStatus(sites.length ? plural(sites.length, "open campsite") + " found."
                            : "No open campsites for those dates. Try other dates or another park.");
-    const fmt = (d) => new Date(d).toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" });
     $("results").replaceChildren(...sites.map((s) => {
       const div = document.createElement("div");
       div.className = "site";
@@ -469,19 +661,149 @@ $("form").addEventListener("submit", async (event) => {
       const title = document.createElement("strong");
       title.textContent = s.facility_name + " — Site " + s.campsite_site_name;
       const when = document.createElement("span");
-      when.textContent = fmt(s.booking_date) + " to " + fmt(s.booking_end_date) + " · " +
-        s.booking_nights + " night" + (s.booking_nights === 1 ? "" : "s");
+      when.textContent = fmt(s.booking_date) + " to " + fmt(s.booking_end_date) + " · " + plural(s.booking_nights, "night");
       info.append(title, when);
-      const link = document.createElement("a");
-      link.href = s.booking_url; link.target = "_blank"; link.rel = "noopener";
-      link.textContent = "Book";
-      div.append(info, link);
+      div.append(info, bookLink(s.booking_url));
       return div;
     }));
   } catch (e) {
     setStatus(e.message, true);
   }
-});
+}
+
+function tripBody() {
+  const num = (id) => ($(id).value ? +$(id).value : null);
+  return {
+    windows: [...$("windows").children].map((w) => w.value()),
+    stops: [...$("stops").children].map((s) => s.value()),
+    any_order: $("any-order").checked,
+    start_days: [...$("start-days").querySelectorAll("input:checked")].map((b) => +b.value),
+    min_total_nights: num("min-total") || 1,
+    max_total_nights: num("max-total"),
+    max_results: num("max-results") || 25,
+  };
+}
+$("trip-form").addEventListener("submit", (event) => { event.preventDefault(); runTrip(tripBody()); });
+async function runTrip(trip) {
+  $("results").replaceChildren();
+  setStatus("");
+  try {
+    const trips = await api("/api/trip", {
+      method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(trip),
+    }, "Searching every combination of dates and stops… this can take a few minutes.");
+    setStatus(trips.length ? plural(trips.length, "trip") + " found."
+                           : "No gap-free trips for those dates. Try wider dates, more flexible nights or alternative campgrounds.");
+    $("results").replaceChildren(...trips.map((t) => {
+      const card = document.createElement("div");
+      card.className = "trip";
+      const first = t.legs[0], last = t.legs[t.legs.length - 1];
+      const h = document.createElement("h2");
+      h.textContent = fmt(first.check_in) + " to " + fmt(last.check_out) + " · " +
+        plural(t.legs.reduce((n, l) => n + l.nights, 0), "night");
+      card.append(h, ...t.legs.map((leg) => {
+        const div = document.createElement("div");
+        div.className = "leg";
+        // a stop with alternative campgrounds can have sites at several of them
+        const mixed = new Set(leg.sites.map((s) => s.facility_name)).size > 1;
+        const title = document.createElement("strong");
+        title.textContent = "Stop " + (leg.stop + 1) + (mixed ? "" : ": " + leg.sites[0].facility_name);
+        const when = document.createElement("span");
+        when.textContent = " " + fmt(leg.check_in) + " to " + fmt(leg.check_out) + " · " + plural(leg.nights, "night");
+        const list = document.createElement("ul");
+        list.append(...leg.sites.map((s) => {
+          const li = document.createElement("li");
+          li.append((mixed ? s.facility_name + " — " : "") + "Site " + s.campsite_site_name, bookLink(s.booking_url));
+          return li;
+        }));
+        div.append(title, when, list);
+        return div;
+      }));
+      return card;
+    }));
+  } catch (e) {
+    setStatus(e.message, true);
+  }
+}
+
+// Saved searches and trips (shared with the command line: `spotsnagger saved`)
+let savedItems = [];
+const quoted = (name) => "“" + name + "”";
+function describeSaved(item) {
+  const p = item.params;
+  if (item.kind === "search") {
+    return "Search · " + fmt(p.start_date) + " to " + fmt(p.end_date) + " · " + plural(+p.nights, "night") + " or more";
+  }
+  const starts = p.windows.map((w) => w.start_date).sort(), ends = p.windows.map((w) => w.end_date).sort();
+  return "Trip · " + plural(p.stops.length, "stop") + " · " + fmt(starts[0]) + " to " + fmt(ends[ends.length - 1]);
+}
+async function loadSaved() {
+  try {
+    savedItems = await api("/api/saved", undefined, "Loading saved searches…");
+  } catch (e) {
+    setStatus(e.message, true);
+    return;
+  }
+  $("saved").hidden = !savedItems.length;
+  $("saved-count").textContent = "(" + savedItems.length + ")";
+  $("saved-list").replaceChildren(...savedItems.map((item) => {
+    const row = document.createElement("div");
+    row.className = "saved-item";
+    const info = document.createElement("div"), name = document.createElement("strong"), what = document.createElement("span");
+    name.textContent = item.name;
+    what.textContent = describeSaved(item);
+    row.dataset.text = (item.name + " " + what.textContent).toLowerCase();
+    info.append(name, what);
+    const actions = document.createElement("div");
+    const run = document.createElement("button");
+    run.type = "button"; run.className = "secondary"; run.textContent = "Search again";
+    run.setAttribute("aria-label", "Search again: " + item.name);
+    run.addEventListener("click", () => (item.kind === "trip" ? runTrip : runSearch)(item.params));
+    const del = removeButton("Delete", async () => {
+      if (!confirm("Delete the saved search " + quoted(item.name) + "?")) return;
+      try {
+        await api("/api/saved?name=" + encodeURIComponent(item.name), { method: "DELETE" }, "Deleting…");
+      } catch (e) {
+        setStatus(e.message, true);
+      }
+      loadSaved();
+    });
+    del.setAttribute("aria-label", "Delete " + item.name);
+    actions.append(run, del);
+    row.append(info, actions);
+    return row;
+  }));
+  filterSaved();
+}
+// every word typed must appear somewhere in the name or description
+function filterSaved() {
+  const words = $("saved-filter").value.toLowerCase().split(" ").filter(Boolean);
+  let shown = 0;
+  for (const row of $("saved-list").children) {
+    row.hidden = !words.every((w) => row.dataset.text.includes(w));
+    shown += !row.hidden;
+  }
+  $("saved-none").hidden = shown > 0 || !savedItems.length;
+}
+$("saved-filter").addEventListener("input", filterSaved);
+async function saveCurrent(form, kind, params) {
+  if (!form.reportValidity()) return;
+  const name = (prompt("Name this " + kind + " so you can search it again later:") || "").trim();
+  if (!name) return;
+  if (savedItems.some((i) => i.name === name) && !confirm("Replace the saved search " + quoted(name) + "?")) return;
+  try {
+    await api("/api/saved", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name, kind, params }),
+    }, "Saving…");
+    setStatus("Saved " + quoted(name) + ".");
+  } catch (e) {
+    setStatus(e.message, true);
+  }
+  loadSaved();
+}
+$("save-search").addEventListener("click", () => saveCurrent($("form"), "search", searchBody()));
+$("save-trip").addEventListener("click", () => saveCurrent($("trip-form"), "trip", tripBody()));
+loadSaved();
 </script>
 </body>
 </html>

@@ -185,6 +185,49 @@ spotsnagger campsites \
     --end-date 2023-07-18
 ```
 
+## trip
+
+Find a trip: back-to-back stays across several campgrounds with no gaps, so each
+checkout is the next stop's check-in. Every stop takes a flexible number of
+nights, and can list alternative campgrounds (any one will do), be optional
+(`nights=0-2`) or, with `--any-order`, be visited in any order. The trip must
+fit inside one of the `--start-date` / `--end-date` ranges given. Limit it
+further with `--start-day` (e.g. `FRI`), `--min-total-nights`,
+`--max-total-nights` and `--max-results`. `--continuous`, `--notifications`,
+`--polling-interval` and `--search-forever` work as they do for `campsites`.
+
+```commandline
+spotsnagger trip     --start-date 2027-07-01 --end-date 2027-07-15     --stop "park=1 campground=-2147483643 nights=2-3 name=First"     --stop "park=1 campground=-2147483642,-2147483647 nights=1-2"     --start-day FRI     --notifications pushover
+```
+
+Alternative locations across different parks need a trip file (YAML or JSON);
+see [example_trip.yaml](examples/example_trip.yaml).
+
+```commandline
+spotsnagger trip --trip-file example_trip.yaml
+```
+
+The web UI (`spotsnagger web`) has the same options under its **Trip** tab.
+
+## saved
+
+Save a search or trip to search it again later: add `--save NAME` to
+`campsites` or `trip`, or press **Save** in the web UI. Both share the same list,
+stored in `~/.spotsnagger_saved.json`, so a search saved in one can be run from
+the other. `campsites --save` keeps one park, its campground(s), one date range,
+nights and type of stay; keep anything more involved in a `--yaml-config` file.
+
+```commandline
+spotsnagger trip --start-date 2027-07-01 --end-date 2027-07-15     --stop "park=1 campground=-2147483643 nights=2-3" --save "July loop"
+spotsnagger saved list
+spotsnagger saved run "July loop" --notifications pushover
+spotsnagger saved delete "July loop"
+```
+
+`saved run` accepts `--continuous`, `--notifications`, `--polling-interval` and
+`--search-forever`. Saved dates don't move, so once they've passed, save again
+with new ones.
+
 ## recreation-areas
 
 Search for Recreation Areas and their IDs. Recreation Areas are park systems like Parks Canada or

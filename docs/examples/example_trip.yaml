@@ -1,0 +1,37 @@
+# A trip: back-to-back stays with no gaps, searched with
+#   spotsnagger trip --trip-file example_trip.yaml
+# Find park IDs with `spotsnagger recreation-areas` and campground IDs with
+# `spotsnagger campgrounds --rec-area <id>`.
+name: Long weekend loop
+
+# The whole trip must fit inside one of these (end_date is the last checkout)
+windows:
+  - start_date: 2027-07-01
+    end_date: 2027-07-15
+  - start_date: 2027-08-01
+    end_date: 2027-08-10
+
+stops:
+  - name: First stop
+    park: 1 # Long Point Region
+    campgrounds: [-2147483643] # Waterford North Conservation Area
+    nights: 2-3 # or min_nights / max_nights
+  - name: Second stop
+    # Any one of these locations will do
+    locations:
+      - park: 1
+        campgrounds: [-2147483642, -2147483647]
+      - park: aspira-3 # Saskatchewan (Aspira parks use the aspira- prefix)
+        campgrounds: [1]
+        booking_category: 0
+    nights: 1-2
+  - name: Optional extra night
+    park: 1
+    campgrounds: [-2147483643]
+    nights: 0-1 # 0 makes this stop optional
+
+any_order: false # true lets the stops be visited in any order
+start_days: [4] # only start on a Friday (0 = Monday ... 6 = Sunday); [] = any day
+min_total_nights: 3
+max_total_nights: 5
+max_results: 25

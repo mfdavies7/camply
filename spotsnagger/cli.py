@@ -2,10 +2,13 @@
 SpotSnagger Command Line Interface
 """
 
+import json
 import logging
+import shlex
 import sys
 from dataclasses import dataclass
 from datetime import date, timedelta
+from time import sleep
 from typing import (
     Any,
     Container,
@@ -20,10 +23,11 @@ from typing import (
 )
 
 import click
+from pydantic import ValidationError
 from rich import traceback
 from rich_click import RichCommand, RichGroup, rich_click
 
-from spotsnagger import __application__, __version__
+from spotsnagger import __application__, __version__, saved
 from spotsnagger.config import SearchConfig, logging_config
 from spotsnagger.config.logging_config import set_up_logging
 from spotsnagger.containers import SearchWindow
@@ -31,6 +35,12 @@ from spotsnagger.containers.examples import example_campsite
 from spotsnagger.notifications import CAMPSITE_NOTIFICATIONS, MultiNotifierProvider
 from spotsnagger.providers import GoingToCamp
 from spotsnagger.search import CAMPSITE_SEARCH_PROVIDER, BaseCampingSearch
+from spotsnagger.trip import (
+    ProviderAvailability,
+    Trip,
+    find_itineraries,
+    parse_park,
+)
 from spotsnagger.utils import (
     configure_spotsnagger,
     log_spotsnagger,
@@ -528,6 +538,13 @@ offline_search_path_argument = click.option(
     "a JSON file, depending on the file extension. When not specified, "
     "the filename will default to `spotsnagger_campsites.json`",
 )
+save_argument = click.option(
+    "--save",
+    default=None,
+    metavar="NAME",
+    help="Save this search under NAME (replacing any with that name) so it can be "
+    "searched again later with `spotsnagger saved run NAME` or from the web UI.",
+)
 day_of_the_week_argument = click.option(
     "--day",
     multiple=True,
@@ -733,6 +750,7 @@ def _get_provider_kwargs_from_cli(
 @equipment_id_argument
 @booking_category_argument
 @provider_argument
+@save_argument
 @debug_option
 @click.pass_obj
 def campsites(
@@ -759,6 +777,7 @@ def campsites(
     equipment_id: Tuple[Union[str, int]],
     day: Optional[Tuple[str]],
     booking_category: Optional[int],
+    save: Optional[str] = None,
 ) -> None:
     """
     Find Available Campsites with Custom Search Criteria
@@ -774,12 +793,47 @@ def campsites(
         context.debug = debug
         _set_up_debug(debug=context.debug)
     if yaml_config is not None:
+        if save:
+            raise click.UsageError(
+                "A --yaml-config search is already saved in its file"
+            )
         provider, provider_kwargs, search_kwargs = yaml_utils.yaml_file_to_arguments(
             file_path=yaml_config
         )
         provider = _preferred_provider(context, provider)
     else:
         provider = _preferred_provider(context, provider)
+        if save:
+            # saved searches are the web UI's shape: one park, campground(s), one window
+            unsupported = {
+                "--campsite": campsite,
+                "--equipment": equipment,
+                "--equipment-id": equipment_id,
+                "--day": day,
+                "--weekends": weekends,
+            }
+            used = [flag for flag, value in unsupported.items() if value]
+            if used or len(rec_area) != 1 or len(start_date) != 1 or len(end_date) != 1:
+                raise click.UsageError(
+                    "--save works with one --rec-area, one --start-date/--end-date and "
+                    f"--campground(s) only{' (not ' + ', '.join(used) + ')' if used else ''}. "
+                    "For anything more, keep the search in a --yaml-config file."
+                )
+            park = rec_area[0]
+            _save(
+                save,
+                "search",
+                {
+                    "rec_area": f"aspira-{park}"
+                    if provider.lower() == "aspira"
+                    else park,
+                    "campground": list(campground),
+                    "start_date": start_date[0],
+                    "end_date": end_date[0],
+                    "nights": nights,
+                    "booking_category": booking_category or 0,
+                },
+            )
         provider_kwargs, search_kwargs = _get_provider_kwargs_from_cli(
             rec_area=rec_area,
             campground=campground,
@@ -806,6 +860,270 @@ def campsites(
     provider_class: Type[BaseCampingSearch] = CAMPSITE_SEARCH_PROVIDER[provider]
     camping_finder: BaseCampingSearch = provider_class(**provider_kwargs)
     camping_finder.get_matching_campsites(**search_kwargs)
+
+
+def _save(name: str, kind: str, params: Dict[str, Any]) -> None:
+    """
+    Save a search or trip, turning bad input into a CLI usage error
+    """
+    try:
+        item = saved.save(name, kind, params)
+    except (ValueError, KeyError) as e:
+        raise click.UsageError(f"Couldn't save {name!r}: {e}") from e
+    logger.info(
+        f'Saved as "{item["name"]}", run it again with: spotsnagger saved run "{item["name"]}"'
+    )
+
+
+def _parse_stop(text: str) -> Dict[str, str]:
+    """
+    `park=1 campground=-21,-22 nights=2-3 category=0 name="Lake"` -> TripStop fields
+    """
+    aliases = {"campground": "campgrounds", "category": "booking_category"}
+    try:
+        return {
+            aliases.get(key, key): value
+            for key, value in (item.split("=", 1) for item in shlex.split(text))
+        }
+    except ValueError as e:
+        raise click.BadParameter(
+            f"{text!r}: use key=value pairs, e.g. 'park=1 campground=-2147483643 nights=2-3'",
+            param_hint="--stop",
+        ) from e
+
+
+@spotsnagger_command_line.command(cls=RichCommand)
+@click.option(
+    "--trip-file",
+    type=click.Path(exists=True, dir_okay=False),
+    default=None,
+    help="YAML or JSON trip file (see docs/examples/example_trip.yaml). "
+    "Command line options override what's in the file.",
+)
+@click.option(
+    "--stop",
+    "stops",
+    multiple=True,
+    metavar="TEXT",
+    help="A stop, in order, as key=value pairs: `park` (rec area ID), `campground` "
+    "(comma-separated IDs, any of them will do), `nights` (`2` or a range like `2-4`, "
+    "`0-2` makes the stop optional), optional `category` and `name`. Repeat per stop.",
+)
+@start_date_argument
+@end_date_argument
+@click.option(
+    "--start-day",
+    multiple=True,
+    type=click.Choice(
+        choices=list(days_of_the_week_mapping.keys()), case_sensitive=False
+    ),
+    metavar="TEXT",
+    help="Day(s) of the week the trip may start on (e.g. FRI). Defaults to any day.",
+)
+@click.option(
+    "--any-order", is_flag=True, help="Allow the stops to be visited in any order."
+)
+@click.option("--min-total-nights", type=click.INT, help="Shortest whole trip.")
+@click.option("--max-total-nights", type=click.INT, help="Longest whole trip.")
+@click.option(
+    "--max-results", type=click.INT, help="Stop after this many trips (default 25)."
+)
+@notifications_argument
+@continuous_argument
+@search_forever_argument
+@polling_interval_argument
+@save_argument
+@debug_option
+@click.pass_obj
+def trip(
+    context: SpotSnaggerContext,
+    debug: bool,
+    trip_file: Optional[str],
+    stops: Tuple[str, ...],
+    start_date: Tuple[str, ...],
+    end_date: Tuple[str, ...],
+    start_day: Tuple[str, ...],
+    any_order: bool,
+    min_total_nights: Optional[int],
+    max_total_nights: Optional[int],
+    max_results: Optional[int],
+    notifications: Tuple[str, ...],
+    continuous: bool,
+    search_forever: Optional[str],
+    polling_interval: Optional[int],
+    save: Optional[str] = None,
+) -> None:
+    """
+    Find a Trip: Back-to-Back Stays Across Several Campgrounds
+
+    Each checkout is the next stop's check-in, so the whole trip has no gaps.
+    Give one or more date ranges (`--start-date`/`--end-date` pairs) the trip must
+    fit in, and a `--stop` per campground with a flexible number of nights. Stops
+    can list alternative campgrounds, be optional, or be visited in any order.
+    """
+    if context.debug is None:
+        context.debug = debug
+        _set_up_debug(debug=context.debug)
+    data: Dict[str, Any] = yaml_utils.read_yaml(trip_file) if trip_file else {}
+    if stops:
+        data["stops"] = [_parse_stop(stop) for stop in stops]
+    if start_date or end_date:
+        if len(start_date) != len(end_date):
+            raise click.UsageError("Give one --end-date for every --start-date")
+        data["windows"] = [
+            {"start_date": s, "end_date": e} for s, e in zip(start_date, end_date)
+        ]
+    overrides = {
+        "start_days": [days_of_the_week_mapping[d] for d in start_day] or None,
+        "any_order": any_order or None,
+        "min_total_nights": min_total_nights,
+        "max_total_nights": max_total_nights,
+        "max_results": max_results,
+    }
+    data.update({k: v for k, v in overrides.items() if v is not None})
+    try:
+        trip_plan = Trip.parse_obj(data)
+    except ValidationError as e:
+        raise click.UsageError(f"That trip isn't valid:\n{e}") from e
+    if save:
+        _save(save, "trip", json.loads(trip_plan.json()))
+    _run_trip(trip_plan, notifications, continuous, search_forever, polling_interval)
+
+
+def _run_trip(
+    trip_plan: Trip,
+    notifications: Sequence[str],
+    continuous: bool,
+    search_forever: Optional[str],
+    polling_interval: Optional[int],
+) -> None:
+    """
+    Search for a trip once, or keep searching and notify about new itineraries
+    """
+    continuous = bool(
+        continuous or notifications or search_forever or polling_interval is not None
+    )
+    notifier = MultiNotifierProvider(list(notifications) or "silent")
+    minutes = BaseCampingSearch._get_polling_minutes(polling_interval)
+    available = ProviderAvailability()
+    seen: Set[Any] = set()
+    try:
+        while True:
+            available.cache.clear()
+            new = [
+                i for i in find_itineraries(trip_plan, available) if i.key not in seen
+            ]
+            seen.update(i.key for i in new)
+            for number, itinerary in enumerate(new, start=1):
+                logger.info(f"Trip option {number}: {itinerary.describe()}")
+            if new and continuous:
+                notifier.send_message(
+                    f"{len(new)} new trip option(s) found:\n\n"
+                    + "\n\n".join(i.describe() for i in new)
+                )
+            if not continuous or (new and not search_forever):
+                break
+            logger.info(
+                f"No new trips found, checking again in {minutes} minutes"
+                if not new
+                else f"Searching again in {minutes} minutes"
+            )
+            sleep(minutes * 60)
+    except Exception as e:
+        if continuous:
+            notifier.last_gasp(error=e)
+        raise
+    if not seen:
+        logger.info("No gap-free trips found for those dates and stops")
+
+
+@spotsnagger_command_line.group(cls=RichGroup, name="saved")
+def saved_command() -> None:
+    """
+    Saved Searches and Trips (Shared with the Web UI)
+
+    Save a search with `--save NAME` on `campsites` or `trip`, or with the Save
+    button in `spotsnagger web`.
+    """
+
+
+@saved_command.command(name="list", cls=RichCommand)
+def saved_list() -> None:
+    """
+    List saved searches and trips
+    """
+    items = saved.list_saved()
+    if not items:
+        logger.info("Nothing saved yet. Add --save NAME to a campsites or trip search.")
+    for item in items:
+        params = item["params"]
+        if item["kind"] == "trip":
+            what = f"trip, {len(params['stops'])} stops"
+        else:
+            what = f"search, {params['start_date']} to {params['end_date']}"
+        logger.info(f"{item['name']} ({what}, saved {item['saved_at']})")
+
+
+@saved_command.command(name="run", cls=RichCommand)
+@click.argument("name")
+@notifications_argument
+@continuous_argument
+@search_forever_argument
+@polling_interval_argument
+@click.pass_context
+def saved_run(
+    ctx: click.Context,
+    name: str,
+    notifications: Tuple[str, ...],
+    continuous: bool,
+    search_forever: Optional[str],
+    polling_interval: Optional[int],
+) -> None:
+    """
+    Search a saved search or trip again
+    """
+    try:
+        item = saved.get_saved(name)
+    except KeyError as e:
+        raise click.UsageError(e.args[0]) from e
+    params = item["params"]
+    if item["kind"] == "trip":
+        try:
+            trip_plan = Trip.parse_obj(params)
+        except ValidationError as e:
+            raise click.UsageError(f"That trip isn't valid any more:\n{e}") from e
+        _run_trip(
+            trip_plan, notifications, continuous, search_forever, polling_interval
+        )
+        return
+    is_aspira, rec_area = parse_park(params["rec_area"])
+    ctx.invoke(
+        campsites,
+        provider="Aspira" if is_aspira else GoingToCamp.__name__,
+        rec_area=(rec_area,),
+        campground=tuple(make_list(params["campground"]) or ()),
+        start_date=(params["start_date"],),
+        end_date=(params["end_date"],),
+        nights=int(params.get("nights") or 1),
+        booking_category=int(params.get("booking_category") or 0),
+        notifications=notifications,
+        continuous=continuous,
+        search_forever=search_forever,
+        polling_interval=polling_interval,
+    )
+
+
+@saved_command.command(name="delete", cls=RichCommand)
+@click.argument("name")
+def saved_delete(name: str) -> None:
+    """
+    Delete a saved search or trip
+    """
+    try:
+        saved.delete(name)
+    except KeyError as e:
+        raise click.UsageError(e.args[0]) from e
+    logger.info(f'Deleted "{name}"')
 
 
 @spotsnagger_command_line.command(cls=RichCommand)
