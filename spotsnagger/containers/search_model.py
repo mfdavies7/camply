@@ -48,6 +48,8 @@ class YamlSearchFile(SpotSnaggerModel):
     weekends: bool = False
     nights: int = 1
     booking_category: Optional[int] = None
+    party_size: int = Field(1, ge=1)
+    tents: int = Field(1, ge=1)
     continuous: bool = True
     polling_interval: int = SearchConfig.RECOMMENDED_POLLING_INTERVAL
     notifications: ArrayOrSingleStr = "silent"

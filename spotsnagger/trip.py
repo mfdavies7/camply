@@ -52,6 +52,8 @@ def make_search(
     booking_category: int,
     window: SearchWindow,
     nights: int = 1,
+    party_size: int = 1,
+    tents: int = 1,
 ) -> BaseCampingSearch:
     """
     The GoingToCamp or Aspira search object for one park's campgrounds
@@ -64,6 +66,7 @@ def make_search(
             campgrounds=[int(c) for c in campgrounds],
             nights=nights,
             booking_category_id=booking_category,
+            party_size=party_size,
             verbose=False,
         )
     return SearchGoingToCamp(
@@ -72,6 +75,8 @@ def make_search(
         campgrounds=list(campgrounds),
         nights=nights,
         booking_category_id=booking_category,
+        party_size=party_size,
+        tents=tents,
         verbose=False,
     )
 
@@ -83,6 +88,8 @@ SEARCH_FIELDS = (
     "start_date",
     "end_date",
     "nights",
+    "party_size",
+    "tents",
 )
 
 
@@ -99,6 +106,10 @@ def parse_search_body(body: Dict[str, Any]) -> Dict[str, Any]:
         raise ValueError("The end date must be after the start date")
     if not 1 <= nights <= (end - start).days:
         raise ValueError("Nights must fit between the start and end dates")
+    party_size = int(body.get("party_size") or 1)
+    tents = int(body.get("tents") or 1)
+    if party_size < 1 or tents < 1:
+        raise ValueError("People and tents must be at least 1")
     campground = body.get("campground") or []
     # no campground means every campground in the park
     campgrounds = [
@@ -113,6 +124,8 @@ def parse_search_body(body: Dict[str, Any]) -> Dict[str, Any]:
         "booking_category": int(body.get("booking_category") or 0),
         "window": SearchWindow(start_date=start, end_date=end),
         "nights": nights,
+        "party_size": party_size,
+        "tents": tents,
     }
 
 
@@ -212,6 +225,8 @@ class Trip(SpotSnaggerModel):
     min_total_nights: int = Field(1, ge=1)
     max_total_nights: Optional[int] = Field(None, ge=1)
     max_results: int = Field(25, ge=1, le=500)
+    party_size: int = Field(1, ge=1)
+    tents: int = Field(1, ge=1)
 
     @validator("windows", each_item=True)
     @classmethod
@@ -289,7 +304,9 @@ class ProviderAvailability:
     Ask the booking sites which sites are free for an exact stay, caching answers
     """
 
-    def __init__(self) -> None:
+    def __init__(self, party_size: int = 1, tents: int = 1) -> None:
+        self.party_size = party_size
+        self.tents = tents
         self.cache: Dict[Any, List[AvailableCampsite]] = {}
         self._searches: Dict[Any, BaseCampingSearch] = {}
 
@@ -312,6 +329,8 @@ class ProviderAvailability:
                     location.campgrounds,
                     location.booking_category,
                     window,
+                    party_size=self.party_size,
+                    tents=self.tents,
                 )
             search.search_window = [window]
             self.cache[cache_key] = search.get_all_campsites()

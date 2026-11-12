@@ -600,6 +600,8 @@ class GoingToCamp(BaseProvider):
         end_date: datetime.date,
         equipment_type_id: Optional[str],
         booking_category_id: int = DEFAULT_BOOKING_CATEGORY,
+        party_size: int = 1,
+        tents: int = 1,
     ) -> List[AvailableResource]:
         """
         Retrieve the Availability for all Sites in a Camp Area
@@ -620,8 +622,8 @@ class GoingToCamp(BaseProvider):
             "endDate": end_date.isoformat(),
             "isReserving": True,
             "getDailyAvailability": False,
-            "partySize": 1,
-            "numEquipment": 1,
+            "partySize": party_size,
+            "numEquipment": tents,
             "filterData": [],
         }
         equipment_category_id = self.get_equipment_category_id(

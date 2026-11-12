@@ -239,7 +239,8 @@ class Aspira(BaseProvider):
         Returns
         -------
         List[Dict[str, Any]]
-            `site_id`, `site_name`, `loop`, `site_type`, `max_people`, `booking_url`
+            `site_id`, `site_name`, `loop`, `site_type`, `max_people` (None when
+            not listed), `booking_url`
         """
         hostname, contract, _ = self.rec_area_lookup(rec_area_id)
         park_url = (
@@ -339,7 +340,7 @@ class Aspira(BaseProvider):
                     "site_name": name,
                     "loop": None,
                     "site_type": "Backcountry",
-                    "max_people": 1,
+                    "max_people": None,
                     "booking_url": f"https://{hostname}{url}",
                 }
             )
@@ -436,7 +437,7 @@ def parse_site_list(page: str) -> List[Dict[str, Any]]:
                 "site_name": html.unescape(site.group(2)).strip(),
                 "loop": texts[0] if texts else None,
                 "site_type": texts[1] if len(texts) > 1 else None,
-                "max_people": int(max_people) if max_people.isdigit() else 1,
+                "max_people": int(max_people) if max_people.isdigit() else None,
                 "available": status.group(1).strip().lower() == "available",
             }
         )

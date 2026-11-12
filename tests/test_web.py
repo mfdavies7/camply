@@ -94,6 +94,12 @@ def test_search_validation() -> None:
             }
         )
         assert parsed["campgrounds"] == []
+        assert (parsed["party_size"], parsed["tents"]) == (1, 1)
+    dates = {"start_date": "2023-06-10", "end_date": "2023-06-12"}
+    parsed = parse_search_body({**base, **dates, "party_size": "4", "tents": 2})
+    assert (parsed["party_size"], parsed["tents"]) == (4, 2)
+    status, body = _search(**{**base, "party_size": -1}, **dates)
+    assert status == 400 and "People and tents" in body["error"]
     status, body = _search(
         **{**base, "rec_area": 99999}, start_date="2023-06-10", end_date="2023-06-12"
     )

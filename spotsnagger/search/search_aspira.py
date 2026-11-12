@@ -47,6 +47,7 @@ class SearchAspira(BaseCampingSearch):
         weekends_only: bool = False,
         nights: int = 1,
         booking_category_id: Optional[int] = None,
+        party_size: int = 1,
         **kwargs: Any,
     ) -> None:
         """
@@ -68,6 +69,9 @@ class SearchAspira(BaseCampingSearch):
             minimum number of consecutive nights to search per campsite
         booking_category_id: Optional[int]
             0 camping (default), 1 day use or 2 backcountry permits
+        party_size: int
+            Number of people; sites listing a smaller capacity are skipped. Aspira has no
+            tent count, so `tents` is accepted and ignored.
         """
         super().__init__(
             search_window=search_window,
@@ -83,6 +87,7 @@ class SearchAspira(BaseCampingSearch):
             sys.exit(1)
         self._recreation_area_id: int = rec_areas[0]
         self.booking_category_id = int(booking_category_id or 0)
+        self.party_size = int(party_size or 1)
         self.campsites = set(make_list(campsites, coerce=int) or [])
         self.campgrounds = self.campsite_finder.find_campgrounds(
             rec_area_id=rec_areas,
@@ -141,6 +146,10 @@ class SearchAspira(BaseCampingSearch):
                 for site in sites:
                     if self.campsites and site["site_id"] not in self.campsites:
                         continue
+                    # sites with no listed capacity are kept: they may fit the party
+                    max_people = site["max_people"]
+                    if max_people is not None and max_people < self.party_size:
+                        continue
                     available_sites.append(
                         AvailableCampsite(
                             campsite_id=site["site_id"],
@@ -152,7 +161,7 @@ class SearchAspira(BaseCampingSearch):
                             booking_nights=nights,
                             campsite_loop_name=site["loop"],
                             campsite_type=site["site_type"],
-                            campsite_occupancy=(1, site["max_people"]),
+                            campsite_occupancy=(1, max_people or self.party_size),
                             campsite_use_type="N/A",
                             availability_status="Available",
                             recreation_area=rec_area.recreation_area,

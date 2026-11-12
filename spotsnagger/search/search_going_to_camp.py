@@ -53,6 +53,8 @@ class SearchGoingToCamp(BaseCampingSearch):
         equipment_id: Optional[int] = None,
         nights: int = 1,
         booking_category_id: Optional[int] = None,
+        party_size: int = 1,
+        tents: int = 1,
         **kwargs,
     ) -> None:
         """
@@ -76,6 +78,11 @@ class SearchGoingToCamp(BaseCampingSearch):
         booking_category_id: Optional[int]
             Reservation service to search (Campsite, Backcountry, Roofed, Group, ...).
             Defaults to 0, "Campsite". List them with `spotsnagger booking-categories`.
+        party_size: int
+            Number of people, defaults to 1
+        tents: int
+            Number of tents (pieces of equipment), defaults to 1. Sent to the API
+            but not filtered on: sites don't list a tent limit
         """
         self.provider = GoingToCamp
         super().__init__(
@@ -99,6 +106,8 @@ class SearchGoingToCamp(BaseCampingSearch):
             is True
         )
         self.campsites = make_list(campsites)
+        self.party_size = int(party_size or 1)
+        self.tents = int(tents or 1)
         self.booking_category_id = int(
             DEFAULT_BOOKING_CATEGORY
             if booking_category_id in (None, "")
@@ -164,6 +173,8 @@ class SearchGoingToCamp(BaseCampingSearch):
                     end_date=search_window.end_date,
                     equipment_type_id=self.equipment_id,
                     booking_category_id=self.booking_category_id,
+                    party_size=self.party_size,
+                    tents=self.tents,
                 )
                 for site in sites:
                     site_details = self.campsite_finder.get_site_details(
@@ -188,7 +199,7 @@ class SearchGoingToCamp(BaseCampingSearch):
                             self._recreation_area_id, self.booking_category_id
                         ),
                         sub_equipment_id=self.equipment_id,
-                        party_size=1,
+                        party_size=self.party_size,
                         start_date=current_start_date,
                         end_date=search_window.end_date,
                         booking_category_id=self.booking_category_id,
@@ -198,6 +209,13 @@ class SearchGoingToCamp(BaseCampingSearch):
                     # be viable for camping. Skip all zero-capacity sites.
                     # A null minCapacity just means no minimum (e.g. Parks Canada)
                     if not site_details["maxCapacity"]:
+                        continue
+                    # the availability API ignores partySize, so filter here
+                    if not (
+                        (site_details["minCapacity"] or 1)
+                        <= self.party_size
+                        <= site_details["maxCapacity"]
+                    ):
                         continue
 
                     available_sites.append(

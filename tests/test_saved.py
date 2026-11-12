@@ -17,6 +17,8 @@ SEARCH = {
     "start_date": "2023-06-10",
     "end_date": "2023-06-12",
     "nights": 2,
+    "party_size": 1,
+    "tents": 1,
 }
 TRIP = {
     "windows": [{"start_date": "2023-06-01", "end_date": "2023-06-30"}],
@@ -80,7 +82,7 @@ def test_web_saved_api() -> None:
 def test_cli_save_and_rerun_trip(cli_runner, monkeypatch) -> None:
     monkeypatch.setattr(
         "spotsnagger.cli.ProviderAvailability",
-        lambda: fake_availability({"-1": {9, 10}}),
+        lambda *_: fake_availability({"-1": {9, 10}}),
     )
     result = cli_runner.run_spotsnagger_command(
         """

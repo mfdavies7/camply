@@ -644,6 +644,24 @@ def _validate_campsites(
     return continuous, search_windows, days_of_the_week
 
 
+party_size_argument = click.option(
+    "--party-size",
+    default=1,
+    show_default=True,
+    type=click.IntRange(min=1),
+    help="Number of people. Some booking sites only show sites that fit your party.",
+)
+tents_argument = click.option(
+    "--tents",
+    default=1,
+    show_default=True,
+    type=click.IntRange(min=1),
+    help="Number of tents (pieces of equipment). Sent to GoingToCamp with the "
+    "search, but sites are not filtered by it: the booking sites don't list how "
+    "many tents a site holds.",
+)
+
+
 def _get_provider_kwargs_from_cli(
     rec_area: Tuple[Union[str, int]],
     campground: Tuple[Union[str, int]],
@@ -666,6 +684,8 @@ def _get_provider_kwargs_from_cli(
     equipment_id: Tuple[Union[str, int]],
     day: Optional[Tuple[str]],
     booking_category: Optional[int] = None,
+    party_size: int = 1,
+    tents: int = 1,
 ) -> Tuple[Dict[str, Any], Dict[str, Any]]:
     """
     Get Provider kwargs from CLI
@@ -713,6 +733,8 @@ def _get_provider_kwargs_from_cli(
         "equipment": equipment,
         "equipment_id": equipment_id,
         "booking_category_id": booking_category,
+        "party_size": party_size,
+        "tents": tents,
         "days_of_the_week": days_of_the_week,
     }
     search_kwargs = {
@@ -749,6 +771,8 @@ def _get_provider_kwargs_from_cli(
 @equipment_argument
 @equipment_id_argument
 @booking_category_argument
+@party_size_argument
+@tents_argument
 @provider_argument
 @save_argument
 @debug_option
@@ -777,6 +801,8 @@ def campsites(
     equipment_id: Tuple[Union[str, int]],
     day: Optional[Tuple[str]],
     booking_category: Optional[int],
+    party_size: int = 1,
+    tents: int = 1,
     save: Optional[str] = None,
 ) -> None:
     """
@@ -832,6 +858,8 @@ def campsites(
                     "end_date": end_date[0],
                     "nights": nights,
                     "booking_category": booking_category or 0,
+                    "party_size": party_size,
+                    "tents": tents,
                 },
             )
         provider_kwargs, search_kwargs = _get_provider_kwargs_from_cli(
@@ -856,6 +884,8 @@ def campsites(
             day=day,
             yaml_config=yaml_config,
             booking_category=booking_category,
+            party_size=party_size,
+            tents=tents,
         )
     provider_class: Type[BaseCampingSearch] = CAMPSITE_SEARCH_PROVIDER[provider]
     camping_finder: BaseCampingSearch = provider_class(**provider_kwargs)
@@ -928,6 +958,16 @@ def _parse_stop(text: str) -> Dict[str, str]:
 @click.option(
     "--max-results", type=click.INT, help="Stop after this many trips (default 25)."
 )
+@click.option(
+    "--party-size",
+    type=click.IntRange(min=1),
+    help="Number of people (default 1).",
+)
+@click.option(
+    "--tents",
+    type=click.IntRange(min=1),
+    help="Number of tents (default 1).",
+)
 @notifications_argument
 @continuous_argument
 @search_forever_argument
@@ -947,6 +987,8 @@ def trip(
     min_total_nights: Optional[int],
     max_total_nights: Optional[int],
     max_results: Optional[int],
+    party_size: Optional[int],
+    tents: Optional[int],
     notifications: Tuple[str, ...],
     continuous: bool,
     search_forever: Optional[str],
@@ -979,6 +1021,8 @@ def trip(
         "min_total_nights": min_total_nights,
         "max_total_nights": max_total_nights,
         "max_results": max_results,
+        "party_size": party_size,
+        "tents": tents,
     }
     data.update({k: v for k, v in overrides.items() if v is not None})
     try:
@@ -1005,7 +1049,7 @@ def _run_trip(
     )
     notifier = MultiNotifierProvider(list(notifications) or "silent")
     minutes = BaseCampingSearch._get_polling_minutes(polling_interval)
-    available = ProviderAvailability()
+    available = ProviderAvailability(trip_plan.party_size, trip_plan.tents)
     seen: Set[Any] = set()
     try:
         while True:
@@ -1106,6 +1150,8 @@ def saved_run(
         end_date=(params["end_date"],),
         nights=int(params.get("nights") or 1),
         booking_category=int(params.get("booking_category") or 0),
+        party_size=int(params.get("party_size") or 1),
+        tents=int(params.get("tents") or 1),
         notifications=notifications,
         continuous=continuous,
         search_forever=search_forever,

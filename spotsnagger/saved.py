@@ -66,8 +66,9 @@ def save(name: str, kind: str, params: Dict[str, Any]) -> Dict[str, Any]:
     if kind == "trip":
         params = json.loads(Trip.parse_obj(params).json())
     elif kind == "search":
-        parse_search_body(params)
+        parsed = parse_search_body(params)
         params = {k: params.get(k) for k in SEARCH_FIELDS}
+        params.update(party_size=parsed["party_size"], tents=parsed["tents"])
     else:
         raise ValueError(f"kind must be one of {KINDS}")
     item = {

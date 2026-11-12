@@ -134,6 +134,18 @@
       "title": "Booking Category",
       "type": "integer"
     },
+    "party_size": {
+      "title": "Party Size",
+      "default": 1,
+      "minimum": 1,
+      "type": "integer"
+    },
+    "tents": {
+      "title": "Tents",
+      "default": 1,
+      "minimum": 1,
+      "type": "integer"
+    },
     "continuous": {
       "title": "Continuous",
       "default": true,

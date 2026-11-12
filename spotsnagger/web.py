@@ -182,7 +182,9 @@ def search_trip(body: Dict[str, Any]) -> List[Dict[str, Any]]:
                 for leg in itinerary.legs
             ]
         }
-        for itinerary in find_itineraries(trip, ProviderAvailability())
+        for itinerary in find_itineraries(
+            trip, ProviderAvailability(trip.party_size, trip.tents)
+        )
     ]
 
 
@@ -375,6 +377,10 @@ PAGE = """<!doctype html>
 
     <label for="nights">Nights in a row <span class="hint">(at least this many)</span></label>
     <input type="number" id="nights" min="1" value="1" required>
+    <div class="row">
+      <div><label for="party-size">People</label><input type="number" id="party-size" min="1" value="1" required></div>
+      <div><label for="tents">Tents</label><input type="number" id="tents" min="1" value="1" required></div>
+    </div>
 
     <div class="buttons">
       <button type="submit" disabled>Search</button>
@@ -386,6 +392,10 @@ PAGE = """<!doctype html>
     <label>When could you go? <span class="hint">(the trip starts and ends inside one of these ranges)</span></label>
     <div id="windows"></div>
     <button type="button" class="secondary" id="add-window">Add another date range</button>
+    <div class="row">
+      <div><label for="trip-party-size">People</label><input type="number" id="trip-party-size" min="1" value="1" required></div>
+      <div><label for="trip-tents">Tents</label><input type="number" id="trip-tents" min="1" value="1" required></div>
+    </div>
 
     <div id="stops"></div>
     <button type="button" class="secondary" id="add-stop">Add a stop</button>
@@ -483,6 +493,10 @@ function option(value, text, url) {
 
 let parksRequest = null;
 const loadParks = () => parksRequest || (parksRequest = api("/api/parks", undefined, "Loading the list of parks…"));
+// one request per URL shared by every picker; a failed request is dropped so it can be retried
+const listCache = {};
+const cachedList = (url, message) => listCache[url] ||
+  (listCache[url] = api(url, undefined, message).catch((e) => { delete listCache[url]; throw e; }));
 
 // Park -> type of stay -> campground, each with a link to the real booking site
 function makePicker(allowAll = false) {
@@ -534,8 +548,8 @@ function makePicker(allowAll = false) {
     if (!park.value) { cat.replaceChildren(option("", "Choose a park first")); return; }
     cat.replaceChildren(option("", "Loading types of stay…"));
     try {
-      const list = await api("/api/booking_categories?rec_area=" + encodeURIComponent(park.value),
-                             undefined, "Loading the types of stay at " + label(park) + "…");
+      const list = await cachedList("/api/booking_categories?rec_area=" + encodeURIComponent(park.value),
+                             "Loading the types of stay at " + label(park) + "…");
       cat.replaceChildren(option("", "Choose a type of stay"), ...list.map((c) => option(c.id, c.name, c.url)));
       cat.disabled = false;
       if (list.some((c) => c.id === 0)) { cat.value = "0"; cat.dispatchEvent(new Event("change")); }
@@ -549,15 +563,24 @@ function makePicker(allowAll = false) {
     if (!cat.value) { cg.replaceChildren(option("", "Choose a type of stay first")); return; }
     cg.replaceChildren(option("", "Loading campgrounds…"));
     try {
-      const list = await api("/api/campgrounds?rec_area=" + encodeURIComponent(park.value) +
+      const list = await cachedList("/api/campgrounds?rec_area=" + encodeURIComponent(park.value) +
                              "&booking_category=" + encodeURIComponent(cat.value),
-                             undefined, "Loading campgrounds at " + label(park) + " with " + label(cat) + " bookings…");
+                             "Loading campgrounds at " + label(park) + " with " + label(cat) + " bookings…");
       cg.replaceChildren(...(allowAll ? [] : [option("", "Choose a campground")]), ...list.map((c) => option(c.id, c.name, c.url)));
       cg.disabled = false;
     } catch (e) {
       cg.replaceChildren(option("", "Couldn't load campgrounds"));
       setStatus(e.message, true);
     }
+  });
+  // a park the user picked themselves is never overridden by setPark
+  let touched = false;
+  park.addEventListener("input", () => { touched = true; });
+  wrap.park = park;
+  wrap.setPark = (id) => loadParks().then(() => {
+    if (touched || park.value === id) return;
+    park.value = id;
+    park.dispatchEvent(new Event("change"));
   });
   const chosen = () => [...cg.selectedOptions].filter((o) => o.value);
   wrap.value = () => ({ park: park.value, booking_category: cat.value,
@@ -620,6 +643,7 @@ function numberField(text, hint, value, min) {
   div.append(label, input);
   return [div, input];
 }
+const tripPickers = [];
 function addStop() {
   const stop = document.createElement("fieldset");
   stop.className = "stop";
@@ -633,6 +657,13 @@ function addStop() {
       alt.append(or);
     }
     const picker = makePicker();
+    // the first trip location's park becomes the default for every other location
+    if (!tripPickers.length) {
+      picker.park.addEventListener("change", () => tripPickers.slice(1).forEach((p) => p.setPark(picker.park.value)));
+    } else if (tripPickers[0].park.value) {
+      picker.setPark(tripPickers[0].park.value);
+    }
+    tripPickers.push(picker);
     alt.append(picker);
     if (alts.children.length) alt.append(removeButton("Remove this alternative", () => alt.remove()));
     alt.value = picker.value;
@@ -688,6 +719,7 @@ function searchBody() {
   return {
     rec_area: where.park, booking_category: where.booking_category, campground: where.campground,
     start_date: $("start").value, end_date: $("end").value, nights: $("nights").value,
+    party_size: +$("party-size").value || 1, tents: +$("tents").value || 1,
   };
 }
 function searchWhat() {
@@ -733,6 +765,8 @@ function tripBody() {
     min_total_nights: num("min-total") || 1,
     max_total_nights: num("max-total"),
     max_results: num("max-results") || 25,
+    party_size: num("trip-party-size") || 1,
+    tents: num("trip-tents") || 1,
   };
 }
 $("trip-form").addEventListener("submit", (event) => { event.preventDefault(); runTrip(tripBody()); });

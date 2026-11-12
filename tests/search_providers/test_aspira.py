@@ -116,6 +116,47 @@ def test_parse_site_list():
         "available": True,
     }
     assert taken["available"] is False
+    unlisted = SITE_LIST.replace(
+        "<div class='td maxPeopleCell'>6</div>", "<div class='td maxPeopleCell'></div>"
+    )
+    assert parse_site_list(unlisted)[0]["max_people"] is None
+
+
+def test_party_size_filter():
+    search = SearchAspira.__new__(SearchAspira)
+    search.campsite_finder = mock.Mock()
+    search.campsite_finder.rec_area_lookup.return_value = (
+        "",
+        "",
+        SimpleNamespace(recreation_area="Sask"),
+    )
+    search.campsite_finder.list_available_sites.return_value = [
+        {
+            "site_id": i,
+            "site_name": str(i),
+            "loop": None,
+            "site_type": None,
+            "max_people": cap,
+            "booking_url": "https://x",
+        }
+        for i, cap in enumerate([2, 6, None])
+    ]
+    search.search_window = [
+        mock.Mock(
+            get_current_start_date=lambda: date(2027, 7, 10), end_date=date(2027, 7, 12)
+        )
+    ]
+    search.campgrounds = [SimpleNamespace(facility_name="Park", facility_id="1")]
+    search._recreation_area_id = 3
+    search.booking_category_id = 0
+    search.campsites = set()
+    search.party_size = 4
+    sites = search.get_all_campsites()
+    # too small skipped; unlisted capacity kept
+    assert [(s.campsite_id, s.campsite_occupancy) for s in sites] == [
+        (1, (1, 6)),
+        (2, (1, 4)),
+    ]
 
 
 def _response(url: str, text: str = "") -> SimpleNamespace:

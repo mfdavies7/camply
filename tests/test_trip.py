@@ -186,7 +186,7 @@ def test_provider_availability_caches(monkeypatch) -> None:
 def test_web_trip(monkeypatch) -> None:
     monkeypatch.setattr(
         "spotsnagger.web.ProviderAvailability",
-        lambda: fake_availability({"-1": {10, 11}, "-2": {12}}),
+        lambda *_: fake_availability({"-1": {10, 11}, "-2": {12}}),
     )
     body = {
         "windows": [{"start_date": "2023-06-01", "end_date": "2023-06-30"}],
@@ -222,7 +222,7 @@ def test_web_trip(monkeypatch) -> None:
 def test_cli_trip(cli_runner, monkeypatch) -> None:
     monkeypatch.setattr(
         "spotsnagger.cli.ProviderAvailability",
-        lambda: fake_availability({"-1": {9, 10}, "-2": {11, 12}}),
+        lambda *_: fake_availability({"-1": {9, 10}, "-2": {11, 12}}),
     )
     result = cli_runner.run_spotsnagger_command(
         """
