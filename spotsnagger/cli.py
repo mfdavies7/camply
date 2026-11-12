@@ -174,7 +174,7 @@ def spotsnagger_command_line(
 
     \b
 
-    visit the spotsnagger documentation at https://juftin.com/camply
+    visit the spotsnagger documentation at https://mfdavies7.github.io/camply
     """
     set_up_logging(log_level=None if debug is False else logging.INFO)
     logger.spotsnagger("spotsnagger, the campsite finder")

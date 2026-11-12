@@ -3,7 +3,7 @@ name: Bug Report
 about: Create a report to help improve spotsnagger
 title: ""
 labels: "bug"
-assignees: "juftin"
+assignees: "mfdavies7"
 ---
 
 **Describe the bug**

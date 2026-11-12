@@ -57,8 +57,9 @@ class FileConfig:
             "notes": "Email Authorization SMTP Server Port",
         },
         EMAIL_FROM_ADDRESS={
-            "default": "spotsnagger@juftin.com",
-            "notes": "Email Notifications Will Come From this Email",
+            "default": "",
+            "notes": "Email Notifications Will Come From this Email "
+            "(default: EMAIL_USERNAME)",
         },
         EMAIL_SUBJECT_LINE={
             "default": "SpotSnagger Notification",

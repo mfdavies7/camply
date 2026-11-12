@@ -3,7 +3,7 @@ build-backend = "hatchling.build"
 requires = ["hatchling"]
 
 [project]
-authors = [{name = "Justin Flannery", email = "justin.flannery@juftin.com"}]
+authors = [{name = "mfdavies7"}]
 classifiers = [
   "License :: OSI Approved :: MIT License",
   "Development Status :: 5 - Production/Stable",
@@ -58,12 +58,11 @@ twilio = [
 spotsnagger = "spotsnagger.cli:cli"
 
 [project.urls]
-Changelog = "https://github.com/juftin/camply/releases"
-Discussions = "https://github.com/juftin/camply/discussions"
-Docker = "https://hub.docker.com/r/juftin/camply"
-Documentation = "https://github.com/juftin/camply#readme"
-Issues = "https://github.com/juftin/camply/issues"
-Source = "https://github.com/juftin/camply"
+Changelog = "https://github.com/mfdavies7/camply/releases"
+Discussions = "https://github.com/mfdavies7/camply/discussions"
+Documentation = "https://github.com/mfdavies7/camply#readme"
+Issues = "https://github.com/mfdavies7/camply/issues"
+Source = "https://github.com/mfdavies7/camply"
 
 [dependency-groups]
 dev = [

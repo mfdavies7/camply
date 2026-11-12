@@ -92,7 +92,7 @@ def write_config_to_file(config_dict: OrderedDict) -> None:
     """
     string_list = [
         "# SPOTSNAGGER CONFIGURATION FILE. ",
-        "# SEE https://github.com/juftin/camply/blob/main/docs/examples/example.camply",
+        "# SEE https://github.com/mfdavies7/camply/blob/main/docs/examples/example.spotsnagger",
         "",
     ]
     for config_key, config_value in config_dict.items():
@@ -110,7 +110,7 @@ def generate_dot_spotsnagger_file():
     logger.info("Running spotsnagger configuration.")
     logger.info(
         "This process generates a configuration file "
-        "(https://github.com/juftin/camply/blob/main/docs/examples/example.camply)"
+        "(https://github.com/mfdavies7/camply/blob/main/docs/examples/example.spotsnagger)"
     )
     logger.info("Do not include quotes around values")
     logger.info(

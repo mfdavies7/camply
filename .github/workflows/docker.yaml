@@ -1,22 +1,26 @@
 name: docker
 
+# Disabled for now: runs only when started by hand. Original triggers:
+#     pull_request:
+#         paths:
+#             - spotsnagger/**
+#             - pyproject.toml
+#             - .github/workflows/docker.yaml
+#             - Dockerfile
+#             - uv.lock
 on:
-    pull_request:
-        paths:
-            - spotsnagger/**
-            - pyproject.toml
-            - .github/workflows/docker.yaml
-            - Dockerfile
-            - uv.lock
+    workflow_dispatch:
 jobs:
     docker:
         runs-on: ubuntu-latest
         steps:
-            - name: docker
-              uses: juftin/actions/taskfile@v1
+            - name: checkout
+              uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+            - name: setup-task
+              uses: arduino/setup-task@v2
               with:
-                  checkout: true
-                  setup-uv: true
-                  task: docker
-                  buildx: true
-                  github-token: ${{ secrets.GITHUB_TOKEN }}
+                  repo-token: ${{ secrets.GITHUB_TOKEN }}
+            - name: setup-buildx
+              uses: docker/setup-buildx-action@v3
+            - name: docker
+              run: task docker

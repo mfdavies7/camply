@@ -1,6 +1,6 @@
 <div align="center">
-<a href="https://github.com/juftin/camply">
-  <img src="https://raw.githubusercontent.com/juftin/camply/main/docs/_static/camply.svg"
+<a href="https://github.com/mfdavies7/camply">
+  <img src="docs/_static/spotsnagger.svg"
     width="400" height="400" alt="spotsnagger">
 </a>
 </div>
@@ -17,19 +17,16 @@ to book your spot!
 ---
 
 <p align="center">
-  <a href="https://github.com/juftin/camply"><img src="https://img.shields.io/pypi/v/camply?color=blue&label=camply" alt="PyPI"></a>
-  <a href="https://pypi.python.org/pypi/camply/"><img src="https://img.shields.io/pypi/pyversions/camply" alt="PyPI - Python Version"></a>
-  <a href="https://hub.docker.com/r/juftin/camply"><img src="https://img.shields.io/docker/v/juftin/camply?color=blue&label=docker&logo=docker" alt="Docker Image Version"></a>
-  <a href="https://github.com/juftin/camply/blob/main/LICENSE"><img src="https://img.shields.io/github/license/juftin/camply?color=blue&label=License" alt="GitHub License"></a>
-  <a href="https://github.com/juftin/camply/actions/workflows/test.yaml?query=branch%3Amain"><img src="https://github.com/juftin/camply/actions/workflows/test.yaml/badge.svg?branch=main" alt="Testing Status"></a>
+  <a href="https://github.com/mfdavies7/camply/blob/main/LICENSE"><img src="https://img.shields.io/github/license/mfdavies7/camply?color=blue&label=License" alt="GitHub License"></a>
+  <a href="https://github.com/mfdavies7/camply/actions/workflows/test.yaml?query=branch%3Amain"><img src="https://github.com/mfdavies7/camply/actions/workflows/test.yaml/badge.svg?branch=main" alt="Testing Status"></a>
   <a href="https://github.com/go-task/task"><img src="https://img.shields.io/badge/task---?message=task&logo=task&color=teal&labelColor=grey" alt="task"></a>
   <a href="https://github.com/astral-sh/uv"><img src="https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/uv/main/assets/badge/v0.json" alt="uv"></a>
   <a href="https://github.com/pre-commit/pre-commit"><img src="https://img.shields.io/badge/pre--commit-enabled-lightgreen?logo=pre-commit" alt="pre-commit"></a>
-  <a href="https://juftin.github.io/camply/"><img src="https://img.shields.io/static/v1?message=docs&color=526CFE&logo=Material+for+MkDocs&logoColor=FFFFFF&label=" alt="docs"></a>
+  <a href="https://mfdavies7.github.io/camply/"><img src="https://img.shields.io/static/v1?message=docs&color=526CFE&logo=Material+for+MkDocs&logoColor=FFFFFF&label=" alt="docs"></a>
   <a href="https://github.com/semantic-release/semantic-release"><img src="https://img.shields.io/badge/%20%20%F0%9F%93%A6%F0%9F%9A%80-semantic--release-e10079.svg" alt="semantic-release"></a>
 </p>
 
-## [Check Out The Docs](https://juftin.com/camply/)
+## [Check Out The Docs](https://mfdavies7.github.io/camply/)
 
 ## Installing
 
@@ -82,11 +79,11 @@ which is the default. It covers the following Canadian recreation areas:
 - Saugeen Valley - Ontario - [saugeen.goingtocamp.com](https://saugeen.goingtocamp.com)
 - St. Clair Region - Ontario - [stclair.goingtocamp.com](https://stclair.goingtocamp.com)
 
-Visit the [Providers](https://juftin.com/camply/providers/) section in the docs to learn more.
+Visit the [Providers](https://mfdavies7.github.io/camply/providers/) section in the docs to learn more.
 
 ## Documentation
 
-Head over to the [spotsnagger documentation](https://juftin.com/camply/) to see what you can do!
+Head over to the [spotsnagger documentation](https://mfdavies7.github.io/camply/) to see what you can do!
 
 ```console
 ❯ spotsnagger --help
@@ -100,7 +97,7 @@ Head over to the [spotsnagger documentation](https://juftin.com/camply/) to see 
  spotsnagger sends you a notification to book your spot!
 
 
- visit the spotsnagger documentation at https://juftin.com/camply
+ visit the spotsnagger documentation at https://mfdavies7.github.io/camply
 
 ╭─ Options ──────────────────────────────────────────────────────────────────────────────────────────────╮
 │                                                                                                        │
@@ -128,12 +125,4 @@ Head over to the [spotsnagger documentation](https://juftin.com/camply/) to see 
 ## Contributing
 
 SpotSnagger doesn't support your favorite campsite booking provider yet? Consider
-[contributing](https://juftin.com/camply/contributing/).
-
----
-
----
-
-<br/>
-
-[<p align="center" ><img src="https://raw.githubusercontent.com/juftin/juftin/main/static/juftin.png" width="120" height="120"  alt="juftin logo"> </p>](https://github.com/juftin)
+[contributing](https://mfdavies7.github.io/camply/contributing/).

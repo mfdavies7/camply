@@ -6,12 +6,13 @@ Runs on the standard library HTTP server, bound to localhost only.
 
 import json
 import logging
+import threading
 import webbrowser
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
-from typing import Any, Dict, List, Tuple
+from typing import Any, Callable, Dict, List, Tuple
 from urllib.parse import parse_qs, urlparse
 
-from spotsnagger import saved
+from spotsnagger import saved, watch
 from spotsnagger.providers import Aspira, GoingToCamp
 from spotsnagger.providers.aspira.aspira_provider import (
     BACKCOUNTRY,
@@ -146,7 +147,8 @@ class _Progress(logging.Handler):
     message = ""
 
     def emit(self, record: logging.LogRecord) -> None:
-        _Progress.message = record.getMessage()
+        if threading.current_thread().name != watch.THREAD_NAME:
+            _Progress.message = record.getMessage()
 
 
 logging.getLogger("spotsnagger.search").addHandler(_Progress(logging.INFO))
@@ -192,7 +194,7 @@ def handle_api(method: str, path: str, query: str, body: bytes) -> Tuple[int, An
     """
     Route an API request; returns (HTTP status, JSON-able payload)
     """
-    routes = {
+    routes: Dict[Tuple[str, str], Callable[[], Any]] = {
         ("GET", "/api/parks"): lambda: list_parks(),
         ("GET", "/api/booking_categories"): lambda: list_booking_categories(
             parse_qs(query)["rec_area"][0]
@@ -211,6 +213,10 @@ def handle_api(method: str, path: str, query: str, body: bytes) -> Tuple[int, An
         ("GET", "/api/saved"): saved.list_saved,
         ("POST", "/api/saved"): lambda: saved.save(**json.loads(body or b"{}")),
         ("DELETE", "/api/saved"): lambda: saved.delete(parse_qs(query)["name"][0]),
+        ("POST", "/api/saved/watch"): lambda: saved.set_watch(
+            **json.loads(body or b"{}")
+        ),
+        ("GET", "/api/notifiers"): watch.list_notifiers,
     }
     route = routes.get((method, path))
     if route is None:
@@ -265,6 +271,7 @@ def serve(port: int = 8000, open_browser: bool = True) -> None:
     server = ThreadingHTTPServer(("127.0.0.1", port), _Handler)
     url = f"http://localhost:{server.server_port}"
     logger.info(f"spotsnagger web UI running at {url} (press Ctrl+C to stop)")
+    watch.start()
     if open_browser:
         webbrowser.open(url)
     try:
@@ -346,6 +353,15 @@ PAGE = """<!doctype html>
   .saved-item span { display:block; color:var(--muted); font-size:.9rem; }
   .saved-item div:last-child { display:flex; gap:12px; align-items:center; flex:none; }
   .saved-item button { margin:0; }
+  .saved-item { flex-wrap:wrap; }
+  .saved-item > div:first-child { flex:1; min-width:0; }
+  .watch { margin-top:6px; }
+  .watch summary { font-weight:600; font-size:.9rem; color:var(--accent); }
+  .watch summary.error { color:var(--err); }
+  .watch label { margin:10px 0 4px; font-size:.95rem; }
+  .watch .days label { margin:0; }
+  .watch input[type=number] { max-width:160px; }
+  .watch button { margin-top:12px; }
   .buttons { display:flex; gap:12px; align-items:flex-end; }
   .buttons button[type=submit] { flex:1; }
   .buttons button.secondary { padding:14px; }
@@ -833,6 +849,72 @@ async function runTrip(trip, what) {
 
 // Saved searches and trips (shared with the command line: `spotsnagger saved`)
 let savedItems = [];
+let notifiersRequest = null;
+const loadNotifiers = () => notifiersRequest ||
+  (notifiersRequest = api("/api/notifiers", undefined, "Checking which notifications are set up…").catch((e) => { notifiersRequest = null; throw e; }));
+const every = (m) => (m % 60 ? plural(m, "minute") : plural(m / 60, "hour"));
+const notifierName = (id) => id.charAt(0).toUpperCase() + id.slice(1);
+function describeWatch(w) {
+  if (!w || !w.enabled) return w && w.last_error ? "Stopped checking: " + w.last_error : "Not checking automatically";
+  let text = "Checking every " + every(w.interval_minutes) + " · alerts to " + w.notifications.map(notifierName).join(", ");
+  if (w.last_checked) {
+    const when = new Date(w.last_checked).toLocaleString(undefined, { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
+    text += " · last checked " + when + (w.last_error ? " (failed: " + w.last_error + ")" : ", " + (w.last_found || 0) + " open");
+  }
+  return text;
+}
+// "Keep checking" panel: on/off, how often (15 minutes or more) and where alerts go
+function watchPanel(item) {
+  const w = item.watch || {};
+  const panel = document.createElement("details"), summary = document.createElement("summary");
+  panel.className = "watch";
+  summary.textContent = describeWatch(item.watch);
+  if (w.last_error) summary.className = "error";
+  const on = document.createElement("input"), onLabel = document.createElement("label");
+  on.type = "checkbox"; on.checked = !!w.enabled;
+  onLabel.className = "check"; onLabel.append(on, "Keep checking and notify me about new openings");
+  const [intervalDiv, interval] = numberField("Check every", "(minutes, at least 15)", w.interval_minutes || 60, 15);
+  interval.step = 5;
+  const where = document.createElement("label");
+  where.textContent = "Send notifications to";
+  const boxes = document.createElement("div");
+  boxes.className = "days";
+  boxes.textContent = "Loading…";
+  loadNotifiers().then((list) => {
+    boxes.replaceChildren(...list.map((n) => {
+      const l = document.createElement("label"), box = document.createElement("input");
+      box.type = "checkbox"; box.value = n.id;
+      box.checked = (w.notifications || []).includes(n.id);
+      box.disabled = !n.configured && !box.checked;
+      l.append(box, notifierName(n.id) + (n.configured ? "" : " (not set up)"));
+      return l;
+    }));
+    if (!list.some((n) => n.configured)) {
+      const hint = document.createElement("p"); hint.className = "hint";
+      hint.textContent = "No notifications are set up yet. Run “spotsnagger configure”, then restart SpotSnagger.";
+      boxes.append(hint);
+    }
+  }).catch((e) => { boxes.textContent = e.message; });
+  const save = document.createElement("button");
+  save.type = "button"; save.className = "secondary"; save.textContent = "Save these settings";
+  save.addEventListener("click", async () => {
+    if (!interval.reportValidity()) return;
+    try {
+      await api("/api/saved/watch", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: item.name, enabled: on.checked, interval_minutes: +interval.value,
+                               notifications: [...boxes.querySelectorAll("input:checked")].map((b) => b.value) }),
+      }, "Saving the settings for " + quoted(item.name) + "…");
+      setStatus(on.checked ? "SpotSnagger will keep checking " + quoted(item.name) + " while it is running."
+                           : "Stopped checking " + quoted(item.name) + ".");
+    } catch (e) {
+      setStatus(e.message, true);
+    }
+    loadSaved();
+  });
+  panel.append(summary, onLabel, intervalDiv, where, boxes, save);
+  return panel;
+}
 const quoted = (name) => "“" + name + "”";
 function describeSaved(item) {
   const p = item.params;
@@ -857,8 +939,9 @@ async function loadSaved() {
     const info = document.createElement("div"), name = document.createElement("strong"), what = document.createElement("span");
     name.textContent = item.name;
     what.textContent = describeSaved(item);
-    row.dataset.text = (item.name + " " + what.textContent).toLowerCase();
-    info.append(name, what);
+    const panel = watchPanel(item);
+    row.dataset.text = (item.name + " " + what.textContent + " " + panel.firstChild.textContent).toLowerCase();
+    info.append(name, what, panel);
     const actions = document.createElement("div");
     const run = document.createElement("button");
     run.type = "button"; run.className = "secondary"; run.textContent = "Search again";

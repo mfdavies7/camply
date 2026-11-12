@@ -22,12 +22,12 @@ theme:
           toggle:
               icon: material/weather-night
               name: Switch to light mode
-repo_url: https://github.com/juftin/camply
+repo_url: https://github.com/mfdavies7/camply
 repo_name: spotsnagger
 edit_uri: blob/main/docs/
-site_author: juftin
+site_author: mfdavies7
 remote_branch: gh-pages
-copyright: Copyright &copy; 2020 Justin Flannery
+copyright: Copyright &copy; 2026 SpotSnagger
 extra_css: [extra.css]
 nav:
     - spotsnagger: index.md
@@ -40,8 +40,8 @@ nav:
     - API Documentation: reference/
     - Dependencies: dependencies.md
     - Contributing: contributing.md
-    - GitHub: https://github.com/juftin/camply
-    - Changelog: https://github.com/juftin/camply/releases
+    - GitHub: https://github.com/mfdavies7/camply
+    - Changelog: https://github.com/mfdavies7/camply/releases
 extra:
     generator: false
 markdown_extensions:

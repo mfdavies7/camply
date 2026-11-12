@@ -22,7 +22,7 @@ tool accepts the sub-commands `campsites`, `recreation-areas`, `campgrounds`, `p
  spotsnagger sends you a notification to book your spot!
 
 
- visit the spotsnagger documentation at https://juftin.com/camply
+ visit the spotsnagger documentation at https://mfdavies7.github.io/camply
 
 ╭─ Options ──────────────────────────────────────────────────────────────────────────────────────────────╮
 │                                                                                                        │

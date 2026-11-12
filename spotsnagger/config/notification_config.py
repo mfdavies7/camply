@@ -42,13 +42,13 @@ class EmailConfig:
     """
 
     EMAIL_TO_ADDRESS: Optional[str] = getenv("EMAIL_TO_ADDRESS", None)
-    DEFAULT_FROM_ADDRESS: str = "spotsnagger@juftin.com"
-    EMAIL_FROM_ADDRESS: str = getenv("EMAIL_FROM_ADDRESS", DEFAULT_FROM_ADDRESS)
     DEFAULT_SUBJECT_LINE: str = "SpotSnagger Notification"
     EMAIL_SUBJECT_LINE: str = getenv("EMAIL_SUBJECT_LINE", DEFAULT_SUBJECT_LINE)
     DEFAULT_SMTP_SERVER: str = "smtp.gmail.com"
     EMAIL_SMTP_SERVER: str = getenv("EMAIL_SMTP_SERVER", DEFAULT_SMTP_SERVER)
     EMAIL_USERNAME: Optional[str] = getenv("EMAIL_USERNAME", None)
+    # unset: send from the login address, which most SMTP servers require anyway
+    EMAIL_FROM_ADDRESS: Optional[str] = getenv("EMAIL_FROM_ADDRESS") or EMAIL_USERNAME
     EMAIL_PASSWORD: Optional[str] = getenv("EMAIL_PASSWORD", None)
     DEFAULT_SMTP_PORT: int = 465
     EMAIL_SMTP_PORT: int = int(getenv("EMAIL_SMTP_PORT", DEFAULT_SMTP_PORT))
@@ -60,7 +60,7 @@ class EmailConfig:
     ]
     OPTIONAL_ENVIRONMENT_VARIABLE: List[str] = [
         f"EMAIL_SMTP_SERVER (default: {DEFAULT_SMTP_SERVER})",
-        f"EMAIL_FROM_ADDRESS (default: {DEFAULT_FROM_ADDRESS})",
+        "EMAIL_FROM_ADDRESS (default: EMAIL_USERNAME)",
         f'EMAIL_SUBJECT_LINE (default: "{DEFAULT_SUBJECT_LINE}")',
         f"EMAIL_SMTP_PORT (default: {DEFAULT_SMTP_PORT})",
     ]

@@ -52,11 +52,11 @@ interested in running spotsnagger as a CRON job instead of as a blocking python 
 
 ## Running in Docker
 
-Docker is a great solution to run spotsnagger wherever you are. There is an official docker image published alongside
-spotsnagger's PyPI distribution that makes running spotsnagger in the background as a detached container really easy.
+Docker is a great solution to run spotsnagger wherever you are. Build the image from a copy of this repository to run spotsnagger in the background as a
+detached container.
 
 ```shell
-docker pull juftin/camply
+docker build -t spotsnagger .
 ```
 
 Here's an example of a detached container searching in the background (notice the `-d` flag, the
@@ -68,7 +68,7 @@ docker run --rm -d \
   --env PUSHOVER_PUSH_TOKEN=${PUSHOVER_PUSH_TOKEN} \
   --env PUSHOVER_PUSH_USER=${PUSHOVER_PUSH_USER} \
   --env TZ="America/Denver" \
-  juftin/camply \
+  spotsnagger \
   spotsnagger campsites \
       --rec-area 14 \
       --campground -2147483643 \
@@ -87,7 +87,7 @@ docker run --rm \
   --name spotsnagger-file-share-example \
   --env TZ="America/Denver" \
   --volume ${HOME}/.spotsnagger:/home/spotsnagger/.spotsnagger \
-  juftin/camply \
+  spotsnagger \
   spotsnagger campsites \
       --rec-area 14 \
       --campground -2147483643 \
@@ -108,7 +108,7 @@ docker run --rm -d \
   --env EMAIL_USERNAME=${EMAIL_USERNAME} \
   --env EMAIL_PASSWORD=${EMAIL_PASSWORD} \
   --volume example_search.yaml:/home/spotsnagger/example_search.yaml \
-  juftin/camply:latest \
+  spotsnagger \
   spotsnagger campsites \
       --yaml-config /home/spotsnagger/example_search.yaml
 ```
@@ -126,7 +126,7 @@ available.
     - `EMAIL_TO_ADDRESS`
     - `EMAIL_USERNAME`
     - `EMAIL_PASSWORD`
-    - `EMAIL_FROM_ADDRESS` (defaults to "spotsnagger@juftin.com")
+    - `EMAIL_FROM_ADDRESS` (defaults to `EMAIL_USERNAME`)
     - `EMAIL_SUBJECT_LINE` (defaults to "spotsnagger Notification")
     - `EMAIL_SMTP_SERVER` (defaults to "smtp.gmail.com")
     - `EMAIL_SMTP_PORT` (defaults to 465)
