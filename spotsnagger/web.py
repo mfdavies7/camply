@@ -279,14 +279,21 @@ PAGE = """<!doctype html>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>SpotSnagger 2.0</title>
+<script>try { const t = localStorage.getItem("theme"); if (t) document.documentElement.dataset.theme = t; } catch (e) {}</script>
 <style>
-  :root { --bg:#f6f7f4; --card:#fff; --ink:#1d2a1f; --muted:#5b6b5e; --accent:#2f6b3a; --line:#dde3dc; --err:#a1260d; }
+  :root { color-scheme:light; --bg:#f6f7f4; --card:#fff; --ink:#1d2a1f; --muted:#5b6b5e; --accent:#2f6b3a;
+          --on-accent:#fff; --line:#dde3dc; --err:#a1260d; }
+  /* Dark when the browser asks for it, unless the user picked light; or when the user picked dark. */
   @media (prefers-color-scheme: dark) {
-    :root { --bg:#141a15; --card:#1d251f; --ink:#e7eee8; --muted:#a3b1a5; --accent:#7cc48a; --line:#2e3a31; --err:#ff8f73; }
+    :root:not([data-theme=light]) { color-scheme:dark; --bg:#141a15; --card:#1d251f; --ink:#e7eee8; --muted:#a3b1a5;
+                                    --accent:#7cc48a; --on-accent:#0d140e; --line:#2e3a31; --err:#ff8f73; }
   }
+  :root[data-theme=dark] { color-scheme:dark; --bg:#141a15; --card:#1d251f; --ink:#e7eee8; --muted:#a3b1a5;
+                           --accent:#7cc48a; --on-accent:#0d140e; --line:#2e3a31; --err:#ff8f73; }
   * { box-sizing: border-box; }
   body { margin:0; background:var(--bg); color:var(--ink); font:16px/1.5 system-ui, sans-serif; }
-  main { max-width:720px; margin:0 auto; padding:24px 16px 64px; }
+  main { position:relative; max-width:720px; margin:0 auto; padding:24px 16px 64px; }
+  button#theme-toggle { position:absolute; top:24px; right:16px; margin:0; }
   h1 { margin:0 0 4px; font-size:1.8rem; }
   p.lead { margin:0 0 24px; color:var(--muted); }
   form, .site, .trip { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:20px; }
@@ -297,9 +304,8 @@ PAGE = """<!doctype html>
                   border:1px solid var(--line); border-radius:8px; }
   input[type=checkbox] { width:auto; margin:0 6px 0 0; }
   .row { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
-  button { margin-top:20px; width:100%; padding:14px; font:inherit; font-weight:700; color:#fff;
+  button { margin-top:20px; width:100%; padding:14px; font:inherit; font-weight:700; color:var(--on-accent);
            background:var(--accent); border:0; border-radius:8px; cursor:pointer; }
-  @media (prefers-color-scheme: dark) { button { color:#0d140e; } }
   button.secondary { width:auto; margin-top:12px; padding:8px 14px; color:var(--accent); background:none;
                      border:1px solid var(--accent); font-weight:600; }
   button.link { width:auto; margin:8px 0 0; padding:0; color:var(--err); background:none; font-weight:600; font-size:.9rem; }
@@ -356,6 +362,7 @@ PAGE = """<!doctype html>
 </head>
 <body>
 <main>
+  <button type="button" class="secondary" id="theme-toggle"></button>
   <h1>SpotSnagger 2.0</h1>
   <p class="lead">Find open campsites at Canadian parks. Search one campground, or plan a trip across several with no gaps between stays.</p>
   <details id="saved" hidden>
@@ -432,6 +439,19 @@ const DAY = 86400000;
 const addDays = (iso, n) => new Date(Date.parse(iso) + n * DAY).toISOString().slice(0, 10);
 let uid = 0;
 const nextId = () => "f" + (++uid);
+
+// Theme: the head script applies a saved choice; with none, CSS follows the browser.
+const darkQuery = matchMedia("(prefers-color-scheme: dark)");
+const isDark = () => (document.documentElement.dataset.theme || (darkQuery.matches ? "dark" : "light")) === "dark";
+const showTheme = () => { $("theme-toggle").textContent = isDark() ? "Light mode" : "Dark mode"; };
+$("theme-toggle").addEventListener("click", () => {
+  const t = isDark() ? "light" : "dark";
+  document.documentElement.dataset.theme = t;
+  try { localStorage.setItem("theme", t); } catch (e) {}
+  showTheme();
+});
+darkQuery.addEventListener("change", showTheme);
+showTheme();
 
 // Keep end after start (the end date is checkout, so it must be at least a day later).
 // ISO date strings compare correctly as text.
