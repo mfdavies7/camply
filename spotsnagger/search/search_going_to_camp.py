@@ -152,7 +152,12 @@ class SearchGoingToCamp(BaseCampingSearch):
         available_sites = []
         for search_window in self.search_window:
             current_start_date = search_window.get_current_start_date()
-            for campground in self.campgrounds:
+            for i, campground in enumerate(self.campgrounds, 1):
+                logger.info(
+                    f"Searching {campground.facility_name} ({i} of "
+                    f"{len(self.campgrounds)}) from {current_start_date} "
+                    f"to {search_window.end_date}"
+                )
                 sites = self.campsite_finder.list_site_availability(
                     campground=campground,
                     start_date=current_start_date,
@@ -233,10 +238,9 @@ class SearchGoingToCamp(BaseCampingSearch):
         searchable_campgrounds: List[CampgroundFacility]
             List of searchable campgrounds
         """
-        if self._campgrounds in [(), [], None] or not self._recreation_area_id:
+        if not self._recreation_area_id:
             logger.error(
-                "You must provide a Campground and Recreation Area to"
-                " search campsites with this provider"
+                "You must provide a Recreation Area to search campsites with this provider"
             )
             sys.exit(1)
 

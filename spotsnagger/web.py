@@ -137,6 +137,26 @@ def list_campgrounds(rec_area: Any, booking_category: int = 0) -> List[Dict[str,
     )
 
 
+class _Progress(logging.Handler):
+    """
+    Keeps the latest search log line ("Searching <campground> (3 of 80)...")
+    """
+
+    # shortcut: one global message, fine for this single-user localhost UI
+    message = ""
+
+    def emit(self, record: logging.LogRecord) -> None:
+        _Progress.message = record.getMessage()
+
+
+logging.getLogger("spotsnagger.search").addHandler(_Progress(logging.INFO))
+
+
+def _reset_progress(run: Any) -> Any:
+    _Progress.message = ""
+    return run()
+
+
 def search(body: Dict[str, Any]) -> List[Dict[str, Any]]:
     """
     Run a single (non-continuous) campsite search from the form fields
@@ -179,8 +199,13 @@ def handle_api(method: str, path: str, query: str, body: bytes) -> Tuple[int, An
             parse_qs(query)["rec_area"][0],
             int(parse_qs(query).get("booking_category", ["0"])[0]),
         ),
-        ("POST", "/api/search"): lambda: search(json.loads(body or b"{}")),
-        ("POST", "/api/trip"): lambda: search_trip(json.loads(body or b"{}")),
+        ("POST", "/api/search"): lambda: _reset_progress(
+            lambda: search(json.loads(body or b"{}"))
+        ),
+        ("POST", "/api/trip"): lambda: _reset_progress(
+            lambda: search_trip(json.loads(body or b"{}"))
+        ),
+        ("GET", "/api/progress"): lambda: {"message": _Progress.message},
         ("GET", "/api/saved"): saved.list_saved,
         ("POST", "/api/saved"): lambda: saved.save(**json.loads(body or b"{}")),
         ("DELETE", "/api/saved"): lambda: saved.delete(parse_qs(query)["name"][0]),
@@ -424,18 +449,27 @@ function setPending(delta) {
   // nothing to submit until every dependent list has loaded
   document.querySelectorAll("button[type=submit]").forEach((b) => { b.disabled = pending > 0; });
 }
-async function api(path, options, message) {
+// `poll`: a long search, so show the server's live "Searching <campground> (3 of 80)" line
+async function api(path, options, message, poll) {
   $("loading-text").textContent = message;
   setPending(1);
+  const timer = poll && setInterval(async () => {
+    try {
+      const progress = await (await fetch("/api/progress")).json();
+      if (progress.message) $("loading-text").textContent = progress.message + "…";
+    } catch (e) { /* keep the last message */ }
+  }, 1000);
   try {
     const res = await fetch(path, options);
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || "Something went wrong");
     return data;
   } finally {
+    clearInterval(timer);
     setPending(-1);
   }
 }
+const label = (sel) => sel.selectedOptions[0]?.textContent || "";
 function setStatus(text, isError) {
   $("status").textContent = text;
   $("status").className = isError ? "error" : "";
@@ -448,10 +482,10 @@ function option(value, text, url) {
 }
 
 let parksRequest = null;
-const loadParks = () => parksRequest || (parksRequest = api("/api/parks", undefined, "Loading parks…"));
+const loadParks = () => parksRequest || (parksRequest = api("/api/parks", undefined, "Loading the list of parks…"));
 
 // Park -> type of stay -> campground, each with a link to the real booking site
-function makePicker() {
+function makePicker(allowAll = false) {
   const wrap = document.createElement("div");
   function field(text, hint) {
     const id = nextId(), label = document.createElement("label"), sel = document.createElement("select");
@@ -472,7 +506,17 @@ function makePicker() {
     wrap.append(label, sel, link);
     return sel;
   }
-  const park = field("Park"), cat = field("Type of stay", "(campsite, backcountry, cabin…)"), cg = field("Campground");
+  const park = field("Park"), cat = field("Type of stay", "(campsite, backcountry, cabin…)"), cg = field("Campground", allowAll ? "(Ctrl/Cmd-click to pick several, Ctrl/Cmd+A for all; pick none to search them all)" : "");
+  cg.required = !allowAll;
+  cg.multiple = allowAll;
+  if (allowAll) cg.size = 8;
+  // Ctrl/Cmd+A selects every campground (not every browser does this for a list box)
+  cg.addEventListener("keydown", (e) => {
+    if (!allowAll || !(e.ctrlKey || e.metaKey) || e.key.toLowerCase() !== "a") return;
+    e.preventDefault();
+    for (const o of cg.options) o.selected = true;
+    cg.dispatchEvent(new Event("change"));
+  });
   park.append(option("", "Loading parks…"));
   cat.append(option("", "Choose a park first"));
   cg.append(option("", "Choose a park first"));
@@ -491,7 +535,7 @@ function makePicker() {
     cat.replaceChildren(option("", "Loading types of stay…"));
     try {
       const list = await api("/api/booking_categories?rec_area=" + encodeURIComponent(park.value),
-                             undefined, "Loading types of stay…");
+                             undefined, "Loading the types of stay at " + label(park) + "…");
       cat.replaceChildren(option("", "Choose a type of stay"), ...list.map((c) => option(c.id, c.name, c.url)));
       cat.disabled = false;
       if (list.some((c) => c.id === 0)) { cat.value = "0"; cat.dispatchEvent(new Event("change")); }
@@ -507,20 +551,22 @@ function makePicker() {
     try {
       const list = await api("/api/campgrounds?rec_area=" + encodeURIComponent(park.value) +
                              "&booking_category=" + encodeURIComponent(cat.value),
-                             undefined, "Loading campgrounds…");
-      cg.replaceChildren(option("", "Choose a campground"), ...list.map((c) => option(c.id, c.name, c.url)));
+                             undefined, "Loading campgrounds at " + label(park) + " with " + label(cat) + " bookings…");
+      cg.replaceChildren(...(allowAll ? [] : [option("", "Choose a campground")]), ...list.map((c) => option(c.id, c.name, c.url)));
       cg.disabled = false;
     } catch (e) {
       cg.replaceChildren(option("", "Couldn't load campgrounds"));
       setStatus(e.message, true);
     }
   });
-  wrap.value = () => ({ park: park.value, booking_category: cat.value, campground: cg.value,
-                        name: cg.selectedOptions[0]?.textContent });
+  const chosen = () => [...cg.selectedOptions].filter((o) => o.value);
+  wrap.value = () => ({ park: park.value, booking_category: cat.value,
+                        campground: allowAll ? chosen().map((o) => o.value) : cg.value,
+                        name: chosen().map((o) => o.textContent).join(", "), parkName: label(park) });
   return wrap;
 }
 
-const singlePicker = makePicker();
+const singlePicker = makePicker(true);
 $("single-picker").append(singlePicker);
 
 // Tabs
@@ -644,14 +690,20 @@ function searchBody() {
     start_date: $("start").value, end_date: $("end").value, nights: $("nights").value,
   };
 }
-$("form").addEventListener("submit", (event) => { event.preventDefault(); runSearch(searchBody()); });
-async function runSearch(body) {
+function searchWhat() {
+  const where = singlePicker.value();
+  const n = where.campground.length;
+  if (!n) return "every campground at " + where.parkName;
+  return (n > 3 ? plural(n, "campground") : where.name) + " at " + where.parkName;
+}
+$("form").addEventListener("submit", (event) => { event.preventDefault(); runSearch(searchBody(), searchWhat()); });
+async function runSearch(body, what) {
   $("results").replaceChildren();
   setStatus("");
   try {
     const sites = await api("/api/search", {
       method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body),
-    }, "Searching for open campsites… this can take a minute.");
+    }, "Searching " + what + " for open sites, " + fmt(body.start_date) + " to " + fmt(body.end_date) + "…", true);
     setStatus(sites.length ? plural(sites.length, "open campsite") + " found."
                            : "No open campsites for those dates. Try other dates or another park.");
     $("results").replaceChildren(...sites.map((s) => {
@@ -684,13 +736,13 @@ function tripBody() {
   };
 }
 $("trip-form").addEventListener("submit", (event) => { event.preventDefault(); runTrip(tripBody()); });
-async function runTrip(trip) {
+async function runTrip(trip, what) {
   $("results").replaceChildren();
   setStatus("");
   try {
     const trips = await api("/api/trip", {
       method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(trip),
-    }, "Searching every combination of dates and stops… this can take a few minutes.");
+    }, "Searching " + (what || plural(trip.stops.length, "stop")) + " for gap-free trips across every combination of dates…", true);
     setStatus(trips.length ? plural(trips.length, "trip") + " found."
                            : "No gap-free trips for those dates. Try wider dates, more flexible nights or alternative campgrounds.");
     $("results").replaceChildren(...trips.map((t) => {
@@ -738,7 +790,7 @@ function describeSaved(item) {
 }
 async function loadSaved() {
   try {
-    savedItems = await api("/api/saved", undefined, "Loading saved searches…");
+    savedItems = await api("/api/saved", undefined, "Loading your saved searches…");
   } catch (e) {
     setStatus(e.message, true);
     return;
@@ -757,11 +809,11 @@ async function loadSaved() {
     const run = document.createElement("button");
     run.type = "button"; run.className = "secondary"; run.textContent = "Search again";
     run.setAttribute("aria-label", "Search again: " + item.name);
-    run.addEventListener("click", () => (item.kind === "trip" ? runTrip : runSearch)(item.params));
+    run.addEventListener("click", () => (item.kind === "trip" ? runTrip : runSearch)(item.params, "saved " + item.kind + " " + quoted(item.name)));
     const del = removeButton("Delete", async () => {
       if (!confirm("Delete the saved search " + quoted(item.name) + "?")) return;
       try {
-        await api("/api/saved?name=" + encodeURIComponent(item.name), { method: "DELETE" }, "Deleting…");
+        await api("/api/saved?name=" + encodeURIComponent(item.name), { method: "DELETE" }, "Deleting saved search " + quoted(item.name) + "…");
       } catch (e) {
         setStatus(e.message, true);
       }
@@ -794,7 +846,7 @@ async function saveCurrent(form, kind, params) {
     await api("/api/saved", {
       method: "POST", headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ name, kind, params }),
-    }, "Saving…");
+    }, "Saving " + kind + " " + quoted(name) + "…");
     setStatus("Saved " + quoted(name) + ".");
   } catch (e) {
     setStatus(e.message, true);

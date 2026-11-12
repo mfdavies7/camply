@@ -90,7 +90,7 @@ def parse_search_body(body: Dict[str, Any]) -> Dict[str, Any]:
     """
     Validate a single-campground search (the web UI form / a saved "search")
 
-    `campground` may be one ID or a list of them.
+    `campground` may be one ID, a list of them, or empty for the whole park.
     """
     start = datetime.date.fromisoformat(str(body["start_date"]))
     end = datetime.date.fromisoformat(str(body["end_date"]))
@@ -99,13 +99,13 @@ def parse_search_body(body: Dict[str, Any]) -> Dict[str, Any]:
         raise ValueError("The end date must be after the start date")
     if not 1 <= nights <= (end - start).days:
         raise ValueError("Nights must fit between the start and end dates")
-    campground = body.get("campground")
+    campground = body.get("campground") or []
+    # no campground means every campground in the park
     campgrounds = [
-        str(c) for c in (campground if isinstance(campground, list) else [campground])
+        str(c)
+        for c in (campground if isinstance(campground, list) else [campground])
+        if c
     ]
-    if not all(campgrounds):
-        # GoingToCamp and Aspira only search within chosen campgrounds
-        raise ValueError("Please choose a campground")
     parse_park(body["rec_area"])
     return {
         "park": body["rec_area"],

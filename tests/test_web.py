@@ -3,9 +3,11 @@ Web UI request handling (no network)
 """
 
 import json
+import logging
 
 from spotsnagger.containers import CampgroundFacility
 from spotsnagger.providers import Aspira, GoingToCamp
+from spotsnagger.trip import parse_search_body
 from spotsnagger.web import handle_api
 
 
@@ -81,10 +83,17 @@ def test_search_validation() -> None:
         **{**base, "nights": 5}, start_date="2023-06-10", end_date="2023-06-12"
     )
     assert status == 400 and "Nights" in body["error"]
-    status, body = _search(
-        **{**base, "campground": ""}, start_date="2023-06-10", end_date="2023-06-12"
-    )
-    assert status == 400 and "campground" in body["error"]
+    # a blank campground searches the whole park
+    for blank in ("", None, []):
+        parsed = parse_search_body(
+            {
+                **base,
+                "campground": blank,
+                "start_date": "2023-06-10",
+                "end_date": "2023-06-12",
+            }
+        )
+        assert parsed["campgrounds"] == []
     status, body = _search(
         **{**base, "rec_area": 99999}, start_date="2023-06-10", end_date="2023-06-12"
     )
@@ -99,3 +108,14 @@ def test_search_validation() -> None:
 
 def test_unknown_route() -> None:
     assert handle_api("GET", "/api/nope", "", b"")[0] == 404
+
+
+def test_progress_reports_latest_search_log(caplog) -> None:
+    with caplog.at_level(logging.INFO, logger="spotsnagger.search"):
+        logging.getLogger("spotsnagger.search.search_aspira").info(
+            "Searching Park (3 of 80)"
+        )
+    assert handle_api("GET", "/api/progress", "", b"") == (
+        200,
+        {"message": "Searching Park (3 of 80)"},
+    )

@@ -59,7 +59,7 @@ class SearchAspira(BaseCampingSearch):
         recreation_area: List[int]
             A single recreation area (province) ID
         campgrounds: Union[List[int], int]
-            Campground (park) ID(s); required
+            Campground (park) ID(s); defaults to all of them
         campsites: Union[List[int], int]
             Only these campsite IDs
         weekends_only: bool
@@ -76,11 +76,10 @@ class SearchAspira(BaseCampingSearch):
             **kwargs,
         )
         rec_areas = make_list(recreation_area, coerce=int) or []
-        campground_ids = make_list(campgrounds, coerce=int) or []
-        if len(rec_areas) != 1 or not campground_ids:
-            logger.error(
-                "Aspira searches need exactly one --rec-area and at least one --campground"
-            )
+        # no campgrounds means every campground in the park
+        campground_ids = make_list(campgrounds, coerce=int) or None
+        if len(rec_areas) != 1:
+            logger.error("Aspira searches need exactly one --rec-area")
             sys.exit(1)
         self._recreation_area_id: int = rec_areas[0]
         self.booking_category_id = int(booking_category_id or 0)
@@ -116,7 +115,12 @@ class SearchAspira(BaseCampingSearch):
         for search_window in self.search_window:
             start_date = search_window.get_current_start_date()
             nights = (search_window.end_date - start_date).days
-            for campground in self.campgrounds:
+            for i, campground in enumerate(self.campgrounds, 1):
+                logger.info(
+                    f"Searching {campground.facility_name} ({i} of "
+                    f"{len(self.campgrounds)}) from {start_date} "
+                    f"to {search_window.end_date}"
+                )
                 if self.booking_category_id == BACKCOUNTRY:
                     sites = self.campsite_finder.list_backcountry_sites(
                         rec_area_id=self._recreation_area_id,
